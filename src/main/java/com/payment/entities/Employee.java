@@ -1,5 +1,6 @@
 package com.payment.entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import jakarta.persistence.CascadeType;
@@ -13,6 +14,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Pattern;
@@ -51,6 +53,11 @@ public class Employee {
 	@Column(name = "department")
 	@Pattern(regexp = "^[A-Za-z ]+$", message = "Department must contain only alphabets and spaces")
 	private String department;
+	
+	@NotBlank(message = "Salary cannot be blank")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Salary must be greater than 0")
+    @Column(name = "salary", nullable = false, precision = 12, scale = 2)
+    private BigDecimal salary;
 	
 	@Column(name = "joined_date", nullable = false)
 	@PastOrPresent(message = "Join Date should be present or past")
