@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
+import com.payment.dto.EmployeeUpdateRequest;
 import com.payment.entities.Account;
 import com.payment.entities.Employee;
+import com.payment.repo.AccountRepo;
 import com.payment.repo.EmployeeRepo;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -22,6 +24,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Autowired
     private EmployeeRepo employeeRepository;
+    
+    @Autowired
+    private AccountRepo accountRepository;
 
     @Override
     public EmployeeResponse createEmployee(EmployeeRequest dto) {
@@ -51,18 +56,27 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public EmployeeResponse updateEmployee(Long id, EmployeeRequest dto) {
+    public EmployeeResponse updateEmployee(Long id, EmployeeUpdateRequest dto) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + id));
 
-        employee.setEmployeeName(dto.getEmployeeName());
-        employee.setEmployeeRole(dto.getEmployeeRole());
-        employee.setDepartment(dto.getDepartment());
-        employee.setSalary(dto.getSalary());
-        employee.setJoinedDate(dto.getJoinedDate());
-        employee.setEmail(dto.getEmail());
+        if (dto.getEmployeeName() != null) employee.setEmployeeName(dto.getEmployeeName());
+        if (dto.getEmployeeRole() != null) employee.setEmployeeRole(dto.getEmployeeRole());
+        if (dto.getDepartment() != null) employee.setDepartment(dto.getDepartment());
+        if (dto.getSalary() != null) employee.setSalary(dto.getSalary());
+        if (dto.getJoinedDate() != null) employee.setJoinedDate(dto.getJoinedDate());
+        if (dto.getEmail() != null && !dto.getEmail().equals(employee.getEmail())) {
+            if (employeeRepository.existsByEmail(dto.getEmail())) {
+                throw new IllegalArgumentException("Email already exists");
+            }
+            employee.setEmail(dto.getEmail());
+        }
 
+        if (dto.getIfsc() != null || dto.getAccountNumber() != null) {
         if (employee.getAccount() == null) {
+        	if (accountRepository.existsByAccountNumber(dto.getAccountNumber())) {
+                throw new IllegalArgumentException("Account number already exists");
+            }
             Account acc = new Account();
             acc.setAccountNumber(dto.getAccountNumber());
             acc.setIfsc(dto.getIfsc());
@@ -70,8 +84,16 @@ public class EmployeeServiceImpl implements EmployeeService {
             acc.setBalance(employee.getAccount() != null ? employee.getAccount().getBalance() : BigDecimal.ZERO);
             employee.setAccount(acc);
         } else {
-            employee.getAccount().setAccountNumber(dto.getAccountNumber());
-            employee.getAccount().setIfsc(dto.getIfsc());
+            if (dto.getAccountNumber() != null && !dto.getAccountNumber().equals(employee.getAccount().getAccountNumber())) {
+                if (accountRepository.existsByAccountNumber(dto.getAccountNumber())) {
+                    throw new IllegalArgumentException("Account number already exists");
+                }
+                employee.getAccount().setAccountNumber(dto.getAccountNumber());
+            }
+            if (dto.getIfsc() != null) {
+                employee.getAccount().setIfsc(dto.getIfsc());
+            }
+        }
         }
 
         Employee updated = employeeRepository.save(employee);

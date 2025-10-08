@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
+import com.payment.dto.EmployeeUpdateRequest;
 
 public interface EmployeeService {
 
@@ -13,7 +14,7 @@ public interface EmployeeService {
 
     List<EmployeeResponse> getAllEmployees();
 
-    EmployeeResponse updateEmployee(Long id, EmployeeRequest dto);
+    EmployeeResponse updateEmployee(Long id, EmployeeUpdateRequest dto);
 
     void deleteEmployee(Long id);
 }
