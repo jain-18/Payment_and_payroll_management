@@ -36,7 +36,7 @@ public class RegistrationRequest {
 	private AddressCreateRequest address;
 
 	@NotBlank(message = "account no cannot be blank")
-	@Pattern(regexp = "^[0-9]{10,20}$", message = "Account number must be 10-20 digits")
+	@Pattern(regexp = "^[0-9]{9,18}$", message = "Account number must be 10-20 digits")
 	private String accountNo;
 
 	@Pattern(regexp = "^[A-Z]{4}0[A-Z0-9]{6}$",message = "Invalid IFSC code format")
