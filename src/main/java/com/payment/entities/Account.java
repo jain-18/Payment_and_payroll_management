@@ -37,7 +37,7 @@ public class Account {
 	
 	@NotBlank(message = "IFSC code cannot be null")
 	@Column(name = "ifsc")
-	private String IFSC;
+	private String ifsc;
 	
 	@Min(value = 0)
 	private BigDecimal balance;
