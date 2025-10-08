@@ -1,6 +1,7 @@
 package com.payment.entities;
 
-import jakarta.annotation.Generated;
+import java.util.List;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -41,18 +43,24 @@ public class Organization {
 	@Column(name = "organization_email",unique = true)
 	private String organizationEmail;
 	
-	@Column(name = "isAcitve")
+	@Column(name = "isActive", nullable=false)
 	private boolean isActive;
 	
 	@OneToOne(cascade = {CascadeType.PERSIST,CascadeType.REMOVE},fetch = FetchType.LAZY)
 	@JoinColumn(name = "address_id")
 	private Address address;
 	
-	
-	@OneToOne(cascade = {CascadeType.PERSIST,CascadeType.REMOVE},fetch = FetchType.LAZY)
+	@OneToOne(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)
 	@JoinColumn(name = "account_id")
 	private Account account;
 	
+	@OneToMany(mappedBy="organization", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<User> users;
 	
+	@OneToMany(mappedBy="organization", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Employee> employee;
 
+	@OneToOne(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)
+	@JoinColumn(name="document_id")
+	private Document document;
 }
