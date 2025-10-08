@@ -16,7 +16,6 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
@@ -55,7 +54,7 @@ public class Employee {
 	@Pattern(regexp = "^[A-Za-z ]+$", message = "Department must contain only alphabets and spaces")
 	private String department;
 	
-	@NotNull(message = "Salary cannot be null")
+	@NotBlank(message = "Salary cannot be blank")
     @DecimalMin(value = "0.0", inclusive = false, message = "Salary must be greater than 0")
     @Column(name = "salary", nullable = false, precision = 12, scale = 2)
     private BigDecimal salary;
