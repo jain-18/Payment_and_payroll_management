@@ -2,6 +2,8 @@ package com.payment.repo;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface OrganizationRepo extends JpaRepository<OrganizationRepo, Long>{
+import com.payment.entities.Organization;
+
+public interface OrganizationRepo extends JpaRepository<Organization, Long>{
 
 }

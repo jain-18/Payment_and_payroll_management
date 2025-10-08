@@ -30,7 +30,7 @@ public class RegistrationRequest {
 
 	@NotBlank(message = "email cannot be blank")
 	@Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "email should be appropiate")
-	private String email;
+	private String organizationEmail;
 
 	@Valid
 	private AddressCreateRequest address;

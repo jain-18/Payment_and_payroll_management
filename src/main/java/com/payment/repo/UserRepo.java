@@ -1,5 +1,9 @@
 package com.payment.repo;
 
-public interface UserRepo {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.payment.entities.User;
+
+public interface UserRepo extends JpaRepository<User, Long>{
 
 }
