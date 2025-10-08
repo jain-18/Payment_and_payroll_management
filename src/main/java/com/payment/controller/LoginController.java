@@ -17,6 +17,7 @@ public class LoginController {
 	
 	@PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<String> registration(@Valid @ModelAttribute RegistrationRequest request){
+		
 		return null;
 	}
 
