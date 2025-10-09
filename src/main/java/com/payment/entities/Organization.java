@@ -1,5 +1,6 @@
 package com.payment.entities;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -10,6 +11,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -59,8 +62,19 @@ public class Organization {
 	
 	@OneToMany(mappedBy="organization", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Employee> employee;
+	
+	@ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+	@JoinTable(
+	    name = "organization_vendors",
+	    joinColumns = @JoinColumn(name = "organization_id"),
+	    inverseJoinColumns = @JoinColumn(name = "vendor_id")
+	)
+	private List<Vendor> vendors = new ArrayList<>();
 
 	@OneToOne(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)
 	@JoinColumn(name="document_id")
 	private Document document;
+	
+	@OneToMany(mappedBy="organization", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Request> request;
 }
