@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-
 @RestController
 @RequestMapping("/potal/orgainzations")
 public class OrganizationController {
@@ -46,7 +45,7 @@ public class OrganizationController {
 
     @PostMapping("/status")
     public ResponseEntity<OrganizationResponse> changeStatus(@RequestParam Long id, @RequestParam boolean status) {
-        OrganizationResponse response = organizationService.changeStatus(id,status);
+        OrganizationResponse response = organizationService.changeStatus(id, status);
         return ResponseEntity.ok(response);
     }
 
@@ -57,12 +56,30 @@ public class OrganizationController {
     }
 
     @PatchMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<OrgInfoResponse> updateOrganization(@Valid @ModelAttribute OrganizationUpdateRequest request,@RequestParam Long id){
-        OrgInfoResponse org = organizationService.updateOrganization(request,id);
+    public ResponseEntity<OrgInfoResponse> updateOrganization(@Valid @ModelAttribute OrganizationUpdateRequest request,
+            @RequestParam Long id) {
+        OrgInfoResponse org = organizationService.updateOrganization(request, id);
         return ResponseEntity.ok(org);
-
     }
-    
-    
+
+    @GetMapping("/active")
+    public ResponseEntity<Page<OrganizationResponse>> getActiveOrg(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "organizationName") String sortBy) {
+         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<OrganizationResponse> response = organizationService.getOrganizationByStatus(pageable,true);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/inActive")
+    public ResponseEntity<Page<OrganizationResponse>> getInActiveOrg(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "organizationName") String sortBy) {
+         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<OrganizationResponse> response = organizationService.getOrganizationByStatus(pageable,false);
+        return ResponseEntity.ok(response);
+    }
 
 }

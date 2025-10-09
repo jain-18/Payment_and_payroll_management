@@ -120,21 +120,23 @@ public class LoginServiceImpl implements LoginService {
 			Role role = roleRepo.findByRoleName("ROLE_ORGANIZATION");
 			user.setRole(role);
 			userRepo.save(user);
+			
+			RegistrationResponse response = modelMapper.map(pendingRegistration, RegistrationResponse.class);
+			response.setOrganizationId(organization.getOrganizationId());
 
 			pendingRegistration = null;
 			pancardBytes = null;
 			cancelledChequeBytes = null;
 			companyRegistrationCertificateBytes = null;
 
-			RegistrationResponse response = modelMapper.map(pendingRegistration, RegistrationResponse.class);
-			response.setOrganizationId(organization.getOrganizationId());
+			
 			return response;
 
 		} catch (Exception e) {
-			// throw new RuntimeException("upload failed");
-			System.out.println("upload fail");
+			throw new RuntimeException("");
+			// System.out.println("upload fail");
 		}
-		return null;
+		// return null;
 	}
 
 }
