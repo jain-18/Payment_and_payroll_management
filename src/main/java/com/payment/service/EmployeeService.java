@@ -1,6 +1,7 @@
 package com.payment.service;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
@@ -12,7 +13,7 @@ public interface EmployeeService {
 
     EmployeeResponse getEmployeeById(Long id);
 
-    List<EmployeeResponse> getAllEmployees();
+    Page<EmployeeResponse> getAllEmployees(Pageable pageable);
 
     EmployeeResponse updateEmployee(Long id, EmployeeUpdateRequest dto);
 
