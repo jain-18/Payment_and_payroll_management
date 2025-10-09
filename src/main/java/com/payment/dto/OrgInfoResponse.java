@@ -1,7 +1,5 @@
 package com.payment.dto;
 
-import com.payment.entities.Address;
-
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -9,12 +7,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class RegistrationResponse {
+public class OrgInfoResponse {
     private Long organizationId;
-    private String userName;
     private String organizationName;
     private String organizationEmail;
-    private Address address;
-    private String accountNo;
-    private String ifsc;
+    private AddressCreateRequest address;
+    private AccountDto account;
+    private DocumentDto document;
+    private boolean isActive;
 }

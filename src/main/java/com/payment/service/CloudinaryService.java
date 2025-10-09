@@ -1,14 +1,12 @@
 package com.payment.service;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 
 @Service
 public class CloudinaryService {
@@ -20,30 +18,28 @@ public class CloudinaryService {
     }
 
     public String uploadFile(byte[] fileBytes, String originalFilename) throws IOException {
-    // Check for null or empty byte array
-    if (fileBytes == null || fileBytes.length == 0) {
-        throw new IllegalArgumentException("File bytes are null or empty! Cannot upload: " + originalFilename);
+        // Check for null or empty byte array
+        if (fileBytes == null || fileBytes.length == 0) {
+            throw new IllegalArgumentException("File bytes are null or empty! Cannot upload: " + originalFilename);
+        }
+
+        // Log info to verify
+        System.out.println("Uploading file: " + originalFilename + ", size: " + fileBytes.length + " bytes");
+
+        try {
+            Map uploadResult = cloudinary.uploader().upload(fileBytes, ObjectUtils.asMap(
+                    "resource_type", "auto",
+                    "public_id", originalFilename));
+
+            String url = uploadResult.get("secure_url").toString();
+            System.out.println("Upload successful! URL: " + url);
+            return url;
+
+        } catch (Exception e) {
+            System.out.println("Upload failed for file: " + originalFilename);
+            e.printStackTrace();
+            throw new RuntimeException("Cloudinary upload failed: " + e.getMessage(), e);
+        }
     }
-
-    // Log info to verify
-    System.out.println("Uploading file: " + originalFilename + ", size: " + fileBytes.length + " bytes");
-
-    try {
-        Map uploadResult = cloudinary.uploader().upload(fileBytes, ObjectUtils.asMap(
-                "resource_type", "auto",
-                "public_id", originalFilename
-        ));
-
-        String url = uploadResult.get("secure_url").toString();
-        System.out.println("Upload successful! URL: " + url);
-        return url;
-
-    } catch (Exception e) {
-        System.out.println("Upload failed for file: " + originalFilename);
-        e.printStackTrace();
-        throw new RuntimeException("Cloudinary upload failed: " + e.getMessage(), e);
-    }
-}
-
 
 }
