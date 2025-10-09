@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
+import com.payment.dto.EmployeeUpdateRequest;
 import com.payment.service.EmployeeService;
 
 @RestController
@@ -44,7 +45,7 @@ public class EmployeeController {
 
     @PutMapping("/{id}")
     public ResponseEntity<EmployeeResponse> updateEmployee(@PathVariable Long id,
-                                                              @Validated @RequestBody EmployeeRequest dto) {
+                                                              @Validated @RequestBody EmployeeUpdateRequest dto) {
         return ResponseEntity.ok(employeeService.updateEmployee(id, dto));
     }
 
