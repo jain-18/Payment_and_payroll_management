@@ -125,7 +125,10 @@ public class LoginServiceImpl implements LoginService {
 			pancardBytes = null;
 			cancelledChequeBytes = null;
 			companyRegistrationCertificateBytes = null;
-			return null;
+
+			RegistrationResponse response = modelMapper.map(pendingRegistration, RegistrationResponse.class);
+			response.setOrganizationId(organization.getOrganizationId());
+			return response;
 
 		} catch (Exception e) {
 			// throw new RuntimeException("upload failed");
