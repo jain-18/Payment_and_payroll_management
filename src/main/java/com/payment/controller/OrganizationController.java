@@ -5,15 +5,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.payment.dto.OrgInfoResponse;
 import com.payment.dto.OrganizationResponse;
+import com.payment.dto.OrganizationUpdateRequest;
+import com.payment.entities.Organization;
 import com.payment.service.OrganizationService;
 
-import java.util.List;
+import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -49,6 +54,13 @@ public class OrganizationController {
     public ResponseEntity<OrgInfoResponse> getOrganizationInfo(@RequestParam Long id) {
         OrgInfoResponse org = organizationService.getOrganization(id);
         return ResponseEntity.ok(org);
+    }
+
+    @PatchMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<OrgInfoResponse> updateOrganization(@Valid @ModelAttribute OrganizationUpdateRequest request,@RequestParam Long id){
+        OrgInfoResponse org = organizationService.updateOrganization(request,id);
+        return ResponseEntity.ok(org);
+
     }
     
     

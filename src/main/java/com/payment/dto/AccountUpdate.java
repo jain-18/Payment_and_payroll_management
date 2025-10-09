@@ -9,21 +9,16 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-@Setter
 @Getter
+@Setter
 @RequiredArgsConstructor
-public class AccountDto {
+public class AccountUpdate {
 
     @NotBlank(message = "account no cannot be blank")
 	@Pattern(regexp = "^[0-9]{10,20}$", message = "Account number must be 10-20 digits")
 	private String accountNumber;
 	
-	@NotBlank(message = "Account type should not be null")
-	private String accountType;
-	
 	@NotBlank(message = "IFSC code cannot be null")
 	private String ifsc;
 	
-	@Min(value = 0)
-	private BigDecimal balance;
 }
