@@ -20,6 +20,8 @@ import com.payment.dto.EmployeeResponse;
 import com.payment.dto.EmployeeUpdateRequest;
 import com.payment.service.EmployeeService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/employees")
 @Validated
@@ -29,7 +31,7 @@ public class EmployeeController {
     private EmployeeService employeeService;
 
     @PostMapping
-    public ResponseEntity<EmployeeResponse> createEmployee(@Validated @RequestBody EmployeeRequest dto) {
+    public ResponseEntity<EmployeeResponse> createEmployee(@Valid @RequestBody EmployeeRequest dto) {
         return new ResponseEntity<>(employeeService.createEmployee(dto), HttpStatus.CREATED);
     }
 
@@ -45,7 +47,7 @@ public class EmployeeController {
 
     @PutMapping("/{id}")
     public ResponseEntity<EmployeeResponse> updateEmployee(@PathVariable Long id,
-                                                              @Validated @RequestBody EmployeeUpdateRequest dto) {
+                                                              @Valid @RequestBody EmployeeUpdateRequest dto) {
         return ResponseEntity.ok(employeeService.updateEmployee(id, dto));
     }
 
