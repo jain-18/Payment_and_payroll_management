@@ -14,7 +14,7 @@ public class RegistrationResponse {
     private String userName;
     private String organizationName;
     private String organizationEmail;
-    private Address address;
+    private AddressCreateRequest address;
     private String accountNo;
     private String ifsc;
 }
