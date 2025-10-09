@@ -132,4 +132,13 @@ public class OrganizationServiceImpl implements OrganizationService {
         return modelMapper.map(organization, OrgInfoResponse.class);
     }
 
+    @Override
+    public Page<OrganizationResponse> getOrganizationByStatus(Pageable pageable,boolean status) {
+       Page<Organization> organizations = organizationRepo.findByIsActive(status,pageable);
+        // Convert Page<Organization> → Page<OrganizationResponse>
+        Page<OrganizationResponse> response = organizations
+                .map(org -> modelMapper.map(org, OrganizationResponse.class));
+        return response;
+    }
+
 }
