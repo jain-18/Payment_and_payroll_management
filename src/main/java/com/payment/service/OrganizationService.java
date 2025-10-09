@@ -5,6 +5,9 @@ import org.springframework.data.domain.Pageable;
 
 import com.payment.dto.OrgInfoResponse;
 import com.payment.dto.OrganizationResponse;
+import com.payment.dto.OrganizationUpdateRequest;
+
+import jakarta.validation.Valid;
 
 public interface OrganizationService {
 
@@ -13,4 +16,6 @@ public interface OrganizationService {
     OrganizationResponse changeStatus(Long id, boolean status);
 
     OrgInfoResponse getOrganization(Long id);
+
+    OrgInfoResponse updateOrganization(OrganizationUpdateRequest request,Long id);
 }
