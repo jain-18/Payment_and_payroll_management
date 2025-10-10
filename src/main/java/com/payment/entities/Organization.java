@@ -77,4 +77,7 @@ public class Organization {
 	
 	@OneToMany(mappedBy="organization", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Request> request;
+	
+	@OneToMany(mappedBy="organization", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<SalaryStructure> salaryStructure;
 }
