@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.payment.dto.RequestResp;
 import com.payment.dto.VendorPaymentRequest;
 import com.payment.dto.VendorPaymentResponse;
 import com.payment.dto.VendorRequest;
@@ -127,6 +130,39 @@ public class VendorController {
         VendorPaymentResponse response = vendorService.sentRequestToAdmin(vendorId,orgId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
+
+    @GetMapping("/vendorPaymentRejected")
+    public ResponseEntity<Page<RequestResp>> getRejectTedVendorPaymentForOrg(HttpServletRequest request,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "actionDate") String sortBy
+    ) {
+        // Long orgId = Will you method to get id of logged in organization
+        Long orgId = 1L;
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        return ResponseEntity.ok(vendorService.getAllVendorPaymentByStatus(orgId,"REJECTED",pageable));
+    }
+
+    @GetMapping("/vendorPaymentApproved")
+    public ResponseEntity<Page<RequestResp>> getApprovedVendorPaymentForOrg(HttpServletRequest request,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(defaultValue = "actionDate") String sortBy
+    ) {
+        // Long orgId = Will you method to get id of logged in organization
+        Long orgId = 1L;
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        return ResponseEntity.ok(vendorService.getAllVendorPaymentByStatus(orgId,"APPROVED",pageable));
+    }
+
+    @PutMapping("/editRejectedVendorPayment")
+    public ResponseEntity<VendorPaymentResponse> getUpdatedResponse(@RequestBody VendorPaymentUpdate dto) {
+         // Long orgId = Will you method to get id of logged in organization
+        Long orgId = 1L;
+        return ResponseEntity.ok(vendorService.updatePaymentRequest(orgId,dto));
+    }
+    
+    
 
     
 

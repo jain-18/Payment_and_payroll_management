@@ -18,6 +18,7 @@ public class RequestResp {
     private BigDecimal totalAmount;
     private BigDecimal balance;
     private String createdBy;
+    private LocalDate actionDate;
     private String rejectReason;
 
 }

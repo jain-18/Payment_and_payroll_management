@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.payment.dto.PendingVendorRes;
+import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
 import com.payment.entities.Account;
 import com.payment.entities.Organization;
@@ -31,7 +32,6 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private AccountRepo accountRepo;
-
 
     @Override
     public Page<PendingVendorRes> getAllPendingVendorRequest(Pageable pageable) {
@@ -91,10 +91,15 @@ public class AdminServiceImpl implements AdminService {
         // 1. Fetch the Request
         Request request = requestRepo.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
-
+        
+        if (request.getActionDate() != null) {
+            throw new RuntimeException("Request already responded");
+        }
+        
         // 2. Update Request fields
         request.setRequestStatus("APPROVED");
         request.setActionDate(LocalDate.now());
+        request.setRejectReason(null);
         Request updatedRequest = requestRepo.save(request);
 
         // 3. Fetch the VendorPayment linked with this Request
@@ -135,6 +140,53 @@ public class AdminServiceImpl implements AdminService {
         resp.setBalance(account.getBalance());
         resp.setCreatedBy(updatedRequest.getCreatedBy());
         resp.setRejectReason(updatedRequest.getRejectReason());
+        resp.setActionDate(updatedRequest.getActionDate());
+
+        return resp;
+    }
+
+    @Override
+    @Transactional
+    public RequestResp vendorRequestReject(RequestReasonDto dto) {
+        // 1. Fetch the Request
+        Request request = requestRepo.findById(dto.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + dto.getId()));
+
+        if (request.getActionDate() != null) {
+            throw new RuntimeException("Request already responded");
+        }
+
+        // 2. Update Request fields
+        request.setRequestStatus("REJECTED");
+        request.setRejectReason(dto.getRejectReason());
+        request.setActionDate(LocalDate.now());
+        Request updatedRequest = requestRepo.save(request);
+
+        // 3. Fetch the VendorPayment linked with this Request
+        VendorPayment vendorPayment = vendorPaymentRepo.findByRequest(request);
+        if (vendorPayment == null) {
+            throw new IllegalArgumentException("No VendorPayment found for this Request");
+        }
+
+        // 4. Update VendorPayment status to REJECTED
+        vendorPayment.setStatus("REJECTED");
+        vendorPaymentRepo.save(vendorPayment);
+
+        // 5. Prepare and return response
+        RequestResp resp = new RequestResp();
+        resp.setRequestId(updatedRequest.getRequestId());
+        resp.setRequestType(updatedRequest.getRequestType());
+        resp.setRequestStatus(updatedRequest.getRequestStatus());
+        resp.setRequestDate(updatedRequest.getRequestDate());
+        resp.setTotalAmount(updatedRequest.getTotalAmount());
+        resp.setCreatedBy(updatedRequest.getCreatedBy());
+        resp.setRejectReason(updatedRequest.getRejectReason());
+        resp.setActionDate(updatedRequest.getActionDate());
+
+        // Include balance if needed
+        if (updatedRequest.getOrganization() != null && updatedRequest.getOrganization().getAccount() != null) {
+            resp.setBalance(updatedRequest.getOrganization().getAccount().getBalance());
+        }
 
         return resp;
     }
