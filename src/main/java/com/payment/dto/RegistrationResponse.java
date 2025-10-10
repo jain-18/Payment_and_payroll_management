@@ -1,7 +1,5 @@
 package com.payment.dto;
 
-import com.payment.entities.Address;
-
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;

@@ -11,7 +11,7 @@ import lombok.Setter;
 public class VendorRequest {
 
 	@NotBlank(message = "Vendor name cannot be blank")
-    @Pattern(regexp = "^[A-Za-z ]+$", message = "Vendor name must contain only alphabets and spaces")
+	@Pattern(regexp = "^[A-Za-z][A-Za-z0-9 ]*$", message = "Organization name must start with a letter and may include digits and spaces")
     private String vendorName;
 
 	@NotBlank(message = "Email cannot be blank")
@@ -28,9 +28,6 @@ public class VendorRequest {
 
     @NotBlank(message = "IFSC code cannot be blank")
     private String ifsc;
-
-    @NotNull(message = "Organization ID cannot be null")
-    private Long organizationId;
 
     @NotNull(message = "Address cannot be null")
     private AddressCreateRequest address;
