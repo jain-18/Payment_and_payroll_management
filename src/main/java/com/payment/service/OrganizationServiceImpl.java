@@ -12,7 +12,6 @@ import com.payment.dto.OrganizationResponse;
 import com.payment.dto.OrganizationUpdateRequest;
 import com.payment.entities.Account;
 import com.payment.entities.Address;
-import com.payment.entities.Document;
 import com.payment.entities.Organization;
 import com.payment.repo.OrganizationRepo;
 

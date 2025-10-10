@@ -34,7 +34,7 @@ public class Vendor {
 	private Long vendorId;
 	
 	@NotBlank(message = "Vendor name cannot be blank")
-	@Pattern(regexp = "^[A-Za-z ]+$", message = "Vendor name must contain only alphabets and spaces")
+	@Pattern(regexp = "^[A-Za-z][A-Za-z0-9 ]*$", message = "Organization name must start with a letter and may include digits and spaces")
 	@Column(name = "vendor_name", length = 50, unique = true)
 	private String vendorName;
 	

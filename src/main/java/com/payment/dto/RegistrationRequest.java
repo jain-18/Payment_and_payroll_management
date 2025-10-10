@@ -25,7 +25,7 @@ public class RegistrationRequest {
 
 	@NotBlank(message = "organization name cannot be blank")
 	@Size(max = 50)
-	@Pattern(regexp = "^[A-Za-z][A-Za-z0-9]*$", message = "organization name must start with alphabet and may include digits")
+	@Pattern(regexp = "^[A-Za-z][A-Za-z0-9 ]*$", message = "Organization name must start with a letter and may include digits and spaces")
 	private String organizationName;
 
 	@NotBlank(message = "email cannot be blank")

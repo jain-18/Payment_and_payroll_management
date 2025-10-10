@@ -1,4 +1,4 @@
-package com.payment.dto;
+package com.payment.controller;
 
 import java.math.BigDecimal;
 
@@ -9,10 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class VendorPaymentResponse {
-    private Long vpId;
+public class VendorPaymentUpdate {
+    private Long id;
     private BigDecimal amount;
-    private Long vendorId;
-    private String vendorName;
-    private String status;
 }

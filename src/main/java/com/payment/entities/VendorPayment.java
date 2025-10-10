@@ -44,4 +44,7 @@ public class VendorPayment {
 	@OneToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
 	@JoinColumn(name = "request_id", nullable = true)
 	private Request request;
+
+	@Column(name = "paymentStatus",nullable = true)
+	private String status;
 }

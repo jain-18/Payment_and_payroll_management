@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.payment.dto.OrgInfoResponse;
 import com.payment.dto.OrganizationResponse;
 import com.payment.dto.OrganizationUpdateRequest;
-import com.payment.entities.Organization;
 import com.payment.service.OrganizationService;
 
 import jakarta.validation.Valid;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/potal/orgainzations")

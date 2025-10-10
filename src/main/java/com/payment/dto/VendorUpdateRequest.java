@@ -22,7 +22,5 @@ public class VendorUpdateRequest {
 
     private String ifsc;
 
-    private Long organizationId;
-
     private AddressCreateRequest address;
 }
