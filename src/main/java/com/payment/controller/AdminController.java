@@ -9,11 +9,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.payment.dto.PendingVendorRes;
+import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
 import com.payment.service.AdminService;
 import com.payment.service.VendorService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
@@ -43,6 +45,12 @@ public class AdminController {
     @PostMapping("/vendorRequestApproved")
     public ResponseEntity<RequestResp> requestApproved(@RequestParam Long requestId){
         RequestResp requestResp = adminService.vendorRequestApproved(requestId);
+        return ResponseEntity.ok(requestResp);
+    }
+
+    @PostMapping("/vendorRequestRejected")
+    public ResponseEntity<RequestResp> requestApproved(@RequestBody RequestReasonDto dto){
+        RequestResp requestResp = adminService.vendorRequestReject(dto);
         return ResponseEntity.ok(requestResp);
     }
 

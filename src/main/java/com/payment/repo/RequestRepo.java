@@ -8,4 +8,5 @@ import com.payment.entities.Request;
 
 public interface RequestRepo extends JpaRepository<Request, Long> {
     Page<Request> findByRequestStatus(String requestStatus, Pageable pageable);
+    Page<Request> findByOrganization_OrganizationIdAndRequestStatus(Long orgId, String status, Pageable pageable);
 }

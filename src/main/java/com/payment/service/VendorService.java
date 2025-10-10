@@ -1,10 +1,12 @@
 package com.payment.service;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+import com.payment.controller.VendorPaymentUpdate;
+import com.payment.dto.RequestResp;
 import com.payment.dto.VendorPaymentRequest;
 import com.payment.dto.VendorPaymentResponse;
 import com.payment.dto.VendorRequest;
@@ -30,4 +32,8 @@ public interface VendorService {
     Page<VendorPaymentResponse> getOrgPaymentStatus(String string, int page, int size);
 
     VendorPaymentResponse sentRequestToAdmin(Long vendorId, Long orgId);
+
+    Page<RequestResp> getAllVendorPaymentByStatus(Long orgId, String status, Pageable pageable);
+
+    VendorPaymentResponse updatePaymentRequest(Long orgId, VendorPaymentUpdate dto);
 }

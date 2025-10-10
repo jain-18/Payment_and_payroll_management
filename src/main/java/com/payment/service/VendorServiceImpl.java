@@ -8,10 +8,13 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.payment.controller.VendorPaymentUpdate;
 import com.payment.dto.AddressCreateRequest;
+import com.payment.dto.RequestResp;
 import com.payment.dto.VendorPaymentRequest;
 import com.payment.dto.VendorPaymentResponse;
 import com.payment.dto.VendorRequest;
@@ -336,6 +339,77 @@ public class VendorServiceImpl implements VendorService {
         response.setVendorId(vendor.getVendorId());
         response.setVendorName(vendor.getVendorName());
         response.setStatus(vp.getStatus());
+
+        return response;
+    }
+
+    @Override
+    public Page<RequestResp> getAllVendorPaymentByStatus(Long orgId, String status, Pageable pageable) {
+        Page<Request> requests = requestRepo.findByOrganization_OrganizationIdAndRequestStatus(
+                orgId, status, pageable);
+
+        return requests.map(req -> {
+            RequestResp resp = new RequestResp();
+            resp.setRequestId(req.getRequestId());
+            resp.setRequestType(req.getRequestType());
+            resp.setRequestStatus(req.getRequestStatus());
+            resp.setRequestDate(req.getRequestDate());
+            resp.setTotalAmount(req.getTotalAmount());
+            resp.setCreatedBy(req.getCreatedBy());
+            resp.setRejectReason(req.getRejectReason());
+
+            if (req.getOrganization() != null && req.getOrganization().getAccount() != null) {
+                resp.setBalance(req.getOrganization().getAccount().getBalance());
+            }
+
+            return resp;
+        });
+    }
+
+    @Override
+    @Transactional
+    public VendorPaymentResponse updatePaymentRequest(Long orgId, VendorPaymentUpdate dto) {
+        // 1. Fetch VendorPayment
+        VendorPayment vendorPayment = vendorPaymentRepo.findById(dto.getId())
+                .orElseThrow(() -> new RuntimeException("Vendor payment not found"));
+
+        // 2. Ensure that the vendor payment belongs to the organization
+        Vendor vendor = vendorPayment.getVendor();
+        boolean isAssociated = vendor.getOrganizations()
+                .stream()
+                .anyMatch(org -> org.getOrganizationId().equals(orgId));
+
+        if (!isAssociated) {
+            throw new IllegalArgumentException("This payment does not belong to the logged-in organization");
+        }
+
+        // 3. Ensure the payment is currently rejected before allowing update
+        if (!"REJECTED".equalsIgnoreCase(vendorPayment.getStatus())) {
+            throw new IllegalStateException("Only rejected payments can be updated");
+        }
+
+        // 4. Update the amount
+        vendorPayment.setAmount(dto.getAmount());
+
+        // 5. Optionally, reset status to DRAFT or NEW (until resubmitted)
+        vendorPayment.setStatus("UPDATED");
+
+        // 6. Save changes
+        VendorPayment updated = vendorPaymentRepo.save(vendorPayment);
+
+        Request req = updated.getRequest();
+        req.setRequestStatus("PENDING");
+        req.setActionDate(null);
+        req.setTotalAmount(updated.getAmount());
+        requestRepo.save(req);
+
+        // 7. Map to response
+        VendorPaymentResponse response = new VendorPaymentResponse();
+        response.setVpId(updated.getVpId());
+        response.setAmount(updated.getAmount());
+        response.setStatus(updated.getStatus());
+        response.setVendorId(updated.getVendor().getVendorId());
+        response.setVendorName(updated.getVendor().getVendorName());
 
         return response;
     }
