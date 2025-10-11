@@ -30,9 +30,9 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
 	@Autowired private SecurityUtil securityUtil;
 
     @Override
-    public SalaryStructureResponse createSalaryStructure(SalaryStructureRequest request) {
-        Long organizationId = securityUtil.getCurrentOrganizationId(); // ✅ from JWT
-        Organization organization = organizationRepository.findById(organizationId)
+    public SalaryStructureResponse createSalaryStructure(SalaryStructureRequest request,Long orgId) {
+        // Long organizationId = securityUtil.getCurrentOrganizationId(); // ✅ from JWT
+        Organization organization = organizationRepository.findById(orgId)
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
 
         Employee employee = employeeRepository.findById(request.getEmployeeId())
@@ -66,11 +66,16 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
     }
 
     @Override
-    public SalaryStructureResponse updateSalaryStructure(Long slipId) {
+    public SalaryStructureResponse updateSalaryStructure(Long slipId,Long orgId) {
+
         SalaryStructure structure = salaryStructureRepository.findById(slipId)
                 .orElseThrow(() -> new ResourceNotFoundException("Salary Structure not found"));
 
         Employee employee = structure.getEmployee();
+
+        if(employee.getOrganization().getOrganizationId() != orgId){
+            throw new RuntimeException("You can only edit salary of your organization");
+        }
 
         // ✅ Recalculate components based on updated employee salary
         SalaryComponent updatedComponent = calculateSalaryComponents(employee.getSalary());

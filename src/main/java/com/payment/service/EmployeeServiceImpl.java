@@ -13,8 +13,10 @@ import com.payment.dto.EmployeeResponse;
 import com.payment.dto.EmployeeUpdateRequest;
 import com.payment.entities.Account;
 import com.payment.entities.Employee;
+import com.payment.entities.Organization;
 import com.payment.repo.AccountRepo;
 import com.payment.repo.EmployeeRepo;
+import com.payment.repo.OrganizationRepo;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -24,45 +26,103 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Autowired
     private EmployeeRepo employeeRepository;
-    
+
     @Autowired
     private AccountRepo accountRepository;
 
+    @Autowired
+    private OrganizationRepo organizationRepo;
+
     @Override
-    public EmployeeResponse createEmployee(EmployeeRequest dto) {
+    public EmployeeResponse createEmployee(EmployeeRequest dto, Long orgId) {
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new RuntimeException("No orgaization with id" + orgId));
+
+        if (!organization.isActive()) {
+            throw new RuntimeException("Organization is not active for this operation");
+        }
         if (employeeRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
         }
 
         Employee employee = mapToEntity(dto);
         employee.setActive(true);
+        employee.setOrganization(organization);
         Employee saved = employeeRepository.save(employee);
         return mapToResponse(saved);
     }
 
     @Override
-    public EmployeeResponse getEmployeeById(Long id) {
+    public EmployeeResponse getEmployeeById(Long id, Long orgId) {
+        // 1. Check if organization exists and is active
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new RuntimeException("Organization is not active for this operation");
+        }
+
+        // 2. Fetch employee
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + id));
+
+        // 3. Check if the employee belongs to this organization
+        if (!employee.getOrganization().getOrganizationId().equals(orgId)) {
+            throw new RuntimeException("This employee does not belong to the given organization");
+        }
+
+        // 4. Map to response
         return mapToResponse(employee);
     }
 
     @Override
-    public Page<EmployeeResponse> getAllEmployees(Pageable pageable) {
-        Page<Employee> employees = employeeRepository.findAll(pageable);
+    public Page<EmployeeResponse> getAllEmployees(Pageable pageable, Long orgId) {
+        // 1. Check if organization exists and is active
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new RuntimeException("Organization is not active for this operation");
+        }
+
+        // 2. Fetch employees for this specific organization
+        Page<Employee> employees = employeeRepository.findByOrganization_OrganizationId(orgId, pageable);
+
+        // 3. Map entities to response DTOs
         return employees.map(this::mapToResponse);
     }
 
     @Override
-    public EmployeeResponse updateEmployee(Long id, EmployeeUpdateRequest dto) {
+    public EmployeeResponse updateEmployee(Long id, EmployeeUpdateRequest dto, Long orgId) {
+        // 1. Validate organization
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new RuntimeException("Organization is not active for this operation");
+        }
+
+        // 2. Fetch employee
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + id));
 
-        if (dto.getEmployeeName() != null) employee.setEmployeeName(dto.getEmployeeName());
-        if (dto.getEmployeeRole() != null) employee.setEmployeeRole(dto.getEmployeeRole());
-        if (dto.getDepartment() != null) employee.setDepartment(dto.getDepartment());
-        if (dto.getSalary() != null) employee.setSalary(dto.getSalary());
-        if (dto.getJoinedDate() != null) employee.setJoinedDate(dto.getJoinedDate());
+        // 3. Check org ownership
+        if (!employee.getOrganization().getOrganizationId().equals(orgId)) {
+            throw new RuntimeException("Employee does not belong to this organization");
+        }
+
+        // 4. Update fields if provided
+        if (dto.getEmployeeName() != null)
+            employee.setEmployeeName(dto.getEmployeeName());
+        if (dto.getEmployeeRole() != null)
+            employee.setEmployeeRole(dto.getEmployeeRole());
+        if (dto.getDepartment() != null)
+            employee.setDepartment(dto.getDepartment());
+        if (dto.getSalary() != null)
+            employee.setSalary(dto.getSalary());
+        if (dto.getJoinedDate() != null)
+            employee.setJoinedDate(dto.getJoinedDate());
+
         if (dto.getEmail() != null && !dto.getEmail().equals(employee.getEmail())) {
             if (employeeRepository.existsByEmail(dto.getEmail())) {
                 throw new IllegalArgumentException("Email already exists");
@@ -70,41 +130,59 @@ public class EmployeeServiceImpl implements EmployeeService {
             employee.setEmail(dto.getEmail());
         }
 
-        if (dto.getIfsc() != null || dto.getAccountNumber() != null) {
-        if (employee.getAccount() == null) {
-        	if (accountRepository.existsByAccountNumber(dto.getAccountNumber())) {
-                throw new IllegalArgumentException("Account number already exists");
-            }
-            Account acc = new Account();
-            acc.setAccountNumber(dto.getAccountNumber());
-            acc.setIfsc(dto.getIfsc());
-            acc.setAccountType("SAVINGS");
-            acc.setBalance(employee.getAccount() != null ? employee.getAccount().getBalance() : BigDecimal.ZERO);
-            employee.setAccount(acc);
-        } else {
-            if (dto.getAccountNumber() != null && !dto.getAccountNumber().equals(employee.getAccount().getAccountNumber())) {
+        // 5. Handle account details
+        if (dto.getAccountNumber() != null || dto.getIfsc() != null) {
+            if (employee.getAccount() == null) {
                 if (accountRepository.existsByAccountNumber(dto.getAccountNumber())) {
                     throw new IllegalArgumentException("Account number already exists");
                 }
-                employee.getAccount().setAccountNumber(dto.getAccountNumber());
+                Account acc = new Account();
+                acc.setAccountNumber(dto.getAccountNumber());
+                acc.setIfsc(dto.getIfsc());
+                acc.setAccountType("SAVINGS");
+                acc.setBalance(BigDecimal.ZERO);
+                employee.setAccount(acc);
+            } else {
+                if (dto.getAccountNumber() != null
+                        && !dto.getAccountNumber().equals(employee.getAccount().getAccountNumber())) {
+                    if (accountRepository.existsByAccountNumber(dto.getAccountNumber())) {
+                        throw new IllegalArgumentException("Account number already exists");
+                    }
+                    employee.getAccount().setAccountNumber(dto.getAccountNumber());
+                }
+                if (dto.getIfsc() != null) {
+                    employee.getAccount().setIfsc(dto.getIfsc());
+                }
             }
-            if (dto.getIfsc() != null) {
-                employee.getAccount().setIfsc(dto.getIfsc());
-            }
-        }
         }
 
+        // 6. Save and map
         Employee updated = employeeRepository.save(employee);
         return mapToResponse(updated);
     }
 
     @Override
-    public void deleteEmployee(Long id) {
+    public void deleteEmployee(Long id, Long orgId) {
+        // 1. Validate organization
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new RuntimeException("Organization is not active for this operation");
+        }
+
+        // 2. Fetch employee
         Employee emp = employeeRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + id));
+
+        // 3. Check ownership
+        if (!emp.getOrganization().getOrganizationId().equals(orgId)) {
+            throw new RuntimeException("This employee does not belong to the given organization");
+        }
+
+        // 4. Delete employee
         employeeRepository.delete(emp);
     }
-
 
     private Employee mapToEntity(EmployeeRequest dto) {
         Employee employee = new Employee();
