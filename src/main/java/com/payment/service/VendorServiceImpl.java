@@ -46,24 +46,28 @@ public class VendorServiceImpl implements VendorService {
     @Override
     public VendorResponse createVendor(VendorRequest dto, Long orgId) {
 
-        if (vendorRepo.existsByVendorName(dto.getVendorName())) {
-            throw new IllegalArgumentException("Name already exists");
-        }
-        if (vendorRepo.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-        if (vendorRepo.existsByPhoneNumber(dto.getPhoneNumber())) {
-            throw new IllegalArgumentException("Phone number already exists");
-        }
+        // if (vendorRepo.existsByVendorName(dto.getVendorName())) {
+        //     throw new IllegalArgumentException("Name already exists");
+        // }
+        // if (vendorRepo.existsByEmail(dto.getEmail())) {
+        //     throw new IllegalArgumentException("Email already exists");
+        // }
+        // if (vendorRepo.existsByPhoneNumber(dto.getPhoneNumber())) {
+        //     throw new IllegalArgumentException("Phone number already exists");
+        // }
         if (vendorRepo.existsByAccount_AccountNumber(dto.getAccountNumber())) {
             throw new IllegalArgumentException("Account number already exists");
         }
+        Organization org = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+
 
         Vendor vendor = new Vendor();
         vendor.setVendorName(dto.getVendorName());
         vendor.setEmail(dto.getEmail());
         vendor.setPhoneNumber(dto.getPhoneNumber());
         vendor.setActive(true);
+        vendor.setOrganizations(org);
 
         Account account = new Account();
         account.setAccountNumber(dto.getAccountNumber());
@@ -80,10 +84,8 @@ public class VendorServiceImpl implements VendorService {
         address.setPinCode(adr.getPinCode());
         vendor.setAddress(address);
 
-        Organization org = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
-
-        vendor.getOrganizations().add(org);
+        
+        // vendor.getOrganizations().add(org);
         org.getVendors().add(vendor);
 
         Vendor saved = vendorRepo.save(vendor);
@@ -96,8 +98,7 @@ public class VendorServiceImpl implements VendorService {
         Vendor vendor = vendorRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
 
-        boolean belongsToOrg = vendor.getOrganizations().stream()
-                .anyMatch(org -> org.getOrganizationId().equals(orgId));
+        boolean belongsToOrg = vendor.getOrganizations().getOrganizationId() == orgId;
 
         if (!belongsToOrg) {
             throw new RuntimeException("Vendor does not belong to the given organization");
@@ -109,8 +110,7 @@ public class VendorServiceImpl implements VendorService {
     @Override
     public List<VendorResponse> getAllVendors(Long orgId) {
         return vendorRepo.findAll().stream()
-                .filter(vendor -> vendor.getOrganizations().stream()
-                        .anyMatch(org -> org.getOrganizationId().equals(orgId)))
+                .filter(vendor -> vendor.getOrganizations().getOrganizationId()==orgId)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -124,31 +124,31 @@ public class VendorServiceImpl implements VendorService {
         Organization currentOrg = organizationRepo.findById(orgId)
                 .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
 
-        if (!vendor.getOrganizations().contains(currentOrg)) {
+        if (!vendor.getOrganizations().equals(currentOrg)) {
             throw new IllegalArgumentException("Vendor does not belong to this organization");
         }
 
         // Vendor name
         if (dto.getVendorName() != null && !dto.getVendorName().equals(vendor.getVendorName())) {
-            if (vendorRepo.existsByVendorName(dto.getVendorName())) {
-                throw new IllegalArgumentException("Vendor name already exists");
-            }
+            // if (vendorRepo.existsByVendorName(dto.getVendorName())) {
+            //     throw new IllegalArgumentException("Vendor name already exists");
+            // }
             vendor.setVendorName(dto.getVendorName());
         }
 
         // Email
         if (dto.getEmail() != null && !dto.getEmail().equals(vendor.getEmail())) {
-            if (vendorRepo.existsByEmail(dto.getEmail())) {
-                throw new IllegalArgumentException("Email already exists");
-            }
+            // if (vendorRepo.existsByEmail(dto.getEmail())) {
+            //     throw new IllegalArgumentException("Email already exists");
+            // }
             vendor.setEmail(dto.getEmail());
         }
 
         // Phone
         if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().equals(vendor.getPhoneNumber())) {
-            if (vendorRepo.existsByPhoneNumber(dto.getPhoneNumber())) {
-                throw new IllegalArgumentException("Phone number already exists");
-            }
+            // if (vendorRepo.existsByPhoneNumber(dto.getPhoneNumber())) {
+            //     throw new IllegalArgumentException("Phone number already exists");
+            // }
             vendor.setPhoneNumber(dto.getPhoneNumber());
         }
 
@@ -186,21 +186,21 @@ public class VendorServiceImpl implements VendorService {
                 .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
 
         // Check if the vendor is associated with this organization
-        if (!vendor.getOrganizations().contains(organization)) {
+        if (!vendor.getOrganizations().equals(organization)) {
             throw new IllegalArgumentException("Vendor does not belong to this organization");
         }
 
         // Remove the association between vendor and this specific organization
-        vendor.getOrganizations().remove(organization);
+        // vendor.getOrganizations().remove(organization);
         organization.getVendors().remove(vendor);
 
         // If vendor is no longer associated with any organization, you can decide to
         // delete it
-        if (vendor.getOrganizations().isEmpty()) {
-            vendorRepo.delete(vendor);
-        } else {
-            vendorRepo.save(vendor);
+        VendorPayment vp = vendorPaymentRepo.findByVendor(vendor).orElse(null);
+        if(vp != null){
+            throw new RuntimeException("You cant delete this vendor because it has done transaction");
         }
+        vendorRepo.delete(vendor);
     }
 
     @Override
@@ -208,8 +208,7 @@ public class VendorServiceImpl implements VendorService {
         Vendor vendor = vendorRepo.findById(request.getVendorId())
                 .orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
 
-        boolean isRegistered = vendor.getOrganizations().stream()
-                .anyMatch(org -> org.getOrganizationId().equals(orgId));
+        boolean isRegistered = vendor.getOrganizations().getOrganizationId() == orgId;
 
         if (!isRegistered) {
             throw new RuntimeException("Organization has not registered this vendor");
@@ -249,9 +248,7 @@ public class VendorServiceImpl implements VendorService {
         adr.setPinCode(vendor.getAddress().getPinCode());
         resp.setAddress(adr);
 
-        if (!vendor.getOrganizations().isEmpty()) {
-            resp.setOrganizationId(vendor.getOrganizations().get(0).getOrganizationId());
-        }
+        resp.setOrganizationId(vendor.getOrganizations().getOrganizationId());
 
         return resp;
     }
@@ -303,9 +300,7 @@ public class VendorServiceImpl implements VendorService {
         Vendor vendor = vp.getVendor();
 
         // 4. Check whether this vendor belongs to this organization
-        boolean isAssociated = vendor.getOrganizations()
-                .stream()
-                .anyMatch(org -> org.getOrganizationId().equals(orgId));
+        boolean isAssociated = vendor.getOrganizations().getOrganizationId() == orgId;
 
         if (!isAssociated) {
             throw new IllegalArgumentException("This payment request does not belong to the logged in organization");
@@ -375,9 +370,7 @@ public class VendorServiceImpl implements VendorService {
 
         // 2. Ensure that the vendor payment belongs to the organization
         Vendor vendor = vendorPayment.getVendor();
-        boolean isAssociated = vendor.getOrganizations()
-                .stream()
-                .anyMatch(org -> org.getOrganizationId().equals(orgId));
+        boolean isAssociated = vendor.getOrganizations().getOrganizationId() == orgId;
 
         if (!isAssociated) {
             throw new IllegalArgumentException("This payment does not belong to the logged-in organization");
