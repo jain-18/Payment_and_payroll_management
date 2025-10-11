@@ -5,7 +5,11 @@ import com.payment.dto.SalaryStructureResponse;
 
 public interface SalaryStructureService {
 
-    SalaryStructureResponse createSalaryStructure(SalaryStructureRequest request);
+    SalaryStructureResponse createSalaryStructure(SalaryStructureRequest request,Long orgId);
 
-    SalaryStructureResponse updateSalaryStructure(Long slipId);
+    SalaryStructureResponse updateSalaryStructure(Long slipId,Long orgId);
+
+    void sendRequestToAdmin(Long orgId);
+
+    void sendRequestUpdateToAdmin(Long orgId);
 }

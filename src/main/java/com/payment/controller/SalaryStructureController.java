@@ -14,6 +14,8 @@ import com.payment.dto.SalaryStructureRequest;
 import com.payment.dto.SalaryStructureResponse;
 import com.payment.service.SalaryStructureService;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api/salary-structures")
 @Validated
@@ -22,14 +24,35 @@ public class SalaryStructureController {
 	@Autowired private SalaryStructureService salaryStructureService;
 
     @PostMapping
-    public ResponseEntity<SalaryStructureResponse> create(@RequestBody SalaryStructureRequest request) {
-        SalaryStructureResponse response = salaryStructureService.createSalaryStructure(request);
+    public ResponseEntity<SalaryStructureResponse> create(@RequestBody SalaryStructureRequest request,HttpServletRequest httpServletRequest) {
+        // code for getting orgId from httpservletReq
+        Long orgId = 1L;
+        SalaryStructureResponse response = salaryStructureService.createSalaryStructure(request,orgId);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{slipId}")
-    public ResponseEntity<SalaryStructureResponse> update(@PathVariable Long slipId) {
-        SalaryStructureResponse response = salaryStructureService.updateSalaryStructure(slipId);
+    public ResponseEntity<SalaryStructureResponse> update(@PathVariable Long slipId,HttpServletRequest httpServletRequest) {
+        // code for getting orgId from httpservletReq
+        Long orgId = 1L;
+        SalaryStructureResponse response = salaryStructureService.updateSalaryStructure(slipId,orgId);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/sendRequest")
+    public ResponseEntity<Void> salaryRequest(HttpServletRequest request) {
+        //get organization id from jwt
+        Long orgId = 1L;
+        salaryStructureService.sendRequestToAdmin(orgId);
+        return null;
+    }
+
+    @PostMapping("/sendSalaryUpdatedRequest")
+    public ResponseEntity<Void> salaryUpdateRequest(HttpServletRequest request) {
+        //get organization id from jwt
+        Long orgId = 1L;
+        salaryStructureService.sendRequestUpdateToAdmin(orgId);
+        return null;
+    }
+    
 }

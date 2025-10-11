@@ -12,11 +12,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.payment.controller.VendorPaymentUpdate;
 import com.payment.dto.AddressCreateRequest;
 import com.payment.dto.RequestResp;
 import com.payment.dto.VendorPaymentRequest;
 import com.payment.dto.VendorPaymentResponse;
+import com.payment.dto.VendorPaymentUpdate;
 import com.payment.dto.VendorRequest;
 import com.payment.dto.VendorResponse;
 import com.payment.dto.VendorUpdateRequest;
