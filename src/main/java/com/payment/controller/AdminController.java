@@ -27,7 +27,7 @@ public class AdminController {
     @Autowired
     AdminService adminService;
 
-    @GetMapping("/pendingVendor")
+    @GetMapping("/pending")
     public ResponseEntity<Page<PendingVendorRes>> getAllPendingVendor(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -37,7 +37,7 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/singleVendorRequest")
+    @GetMapping("/singleRequest")
     public ResponseEntity<RequestResp> getAllPendingVendor(@RequestParam Long requestId){
         RequestResp requestResp = adminService.getSingleRequest(requestId);
         return ResponseEntity.ok(requestResp);
@@ -51,6 +51,18 @@ public class AdminController {
     @PostMapping("/vendorRequestRejected")
     public ResponseEntity<RequestResp> requestApproved(@RequestBody RequestReasonDto dto){
         RequestResp requestResp = adminService.vendorRequestReject(dto);
+        return ResponseEntity.ok(requestResp);
+    }
+
+    @PostMapping("/salaryRequestApproved")
+    public ResponseEntity<RequestResp> salaryRequestApproved(@RequestParam Long requestId){
+        RequestResp requestResp = adminService.approveSalaryRequest(requestId);
+        return ResponseEntity.ok(requestResp);
+    }
+
+    @PostMapping("/salaryRequestReject")
+    public ResponseEntity<RequestResp> salaryRequestReject(@RequestBody RequestReasonDto dto){
+        RequestResp requestResp = adminService.rejectSalaryRequest(dto);
         return ResponseEntity.ok(requestResp);
     }
 
