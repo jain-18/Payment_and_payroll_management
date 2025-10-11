@@ -86,7 +86,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
         Employee employee = structure.getEmployee();
 
         if (employee.getOrganization().getOrganizationId() != orgId) {
-            throw new RuntimeException("You can only edit salary of your organization");
+            throw new IllegalStateException("You can only edit salary of your organization");
         }
 
         // ✅ Recalculate components based on updated employee salary
@@ -152,10 +152,10 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
     public void sendRequestToAdmin(Long orgId) {
         // 1. Validate organization
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
 
         List<SalaryStructure> salaryStructures = salaryStructureRepository.findAllByOrganizationOrganizationId(orgId)
@@ -164,7 +164,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
                 .toList();
 
         if (salaryStructures.isEmpty()) {
-            throw new RuntimeException("No pending salary payments found for this organization");
+            throw new IllegalStateException("No pending salary payments found for this organization");
         }
 
         // 3. Calculate total salary
@@ -182,7 +182,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
                 totalSalary);
 
         if (duplicateExists) {
-            throw new RuntimeException("A salary request for this month and amount already exists.");
+            throw new IllegalStateException("A salary request for this month and amount already exists.");
         }
 
         // 5. Create a new Request entity
@@ -210,10 +210,10 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
     public void sendRequestUpdateToAdmin(Long orgId) {
         // 1. Validate organization
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
 
         // 2. Fetch all salary structures with status UPDATED
@@ -224,7 +224,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
                 .toList();
 
         if (updatedStructures.isEmpty()) {
-            throw new RuntimeException("No updated salary structures found for this organization");
+            throw new IllegalStateException("No updated salary structures found for this organization");
         }
 
         // 3. Calculate total updated salary amount

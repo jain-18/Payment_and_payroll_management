@@ -45,10 +45,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public EmployeeResponse createEmployee(EmployeeRequest dto, Long orgId) {
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("No orgaization with id" + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("No orgaization with id" + orgId));
 
         if (!organization.isActive()) {
-            throw new ResourceNotFoundException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
         if (employeeRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
@@ -78,10 +78,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeResponse getEmployeeById(Long id, Long orgId) {
         // 1. Check if organization exists and is active
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
 
         // 2. Fetch employee
@@ -90,7 +90,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         // 3. Check if the employee belongs to this organization
         if (!employee.getOrganization().getOrganizationId().equals(orgId)) {
-            throw new RuntimeException("This employee does not belong to the given organization");
+            throw new IllegalStateException("This employee does not belong to the given organization");
         }
 
         // 4. Map to response
@@ -104,7 +104,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
 
         // 2. Fetch employees for this specific organization
@@ -121,7 +121,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
 
         // 2. Fetch employee
@@ -130,7 +130,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         // 3. Check org ownership
         if (!employee.getOrganization().getOrganizationId().equals(orgId)) {
-            throw new RuntimeException("Employee does not belong to this organization");
+            throw new IllegalStateException("Employee does not belong to this organization");
         }
 
         // 4. Update fields if provided
@@ -190,7 +190,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
 
         // 2. Fetch employee
@@ -199,7 +199,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         // 3. Check ownership
         if (!emp.getOrganization().getOrganizationId().equals(orgId)) {
-            throw new RuntimeException("This employee does not belong to the given organization");
+            throw new IllegalStateException("This employee does not belong to the given organization");
         }
 
         // 4. Delete employee
