@@ -14,9 +14,13 @@ import com.payment.dto.EmployeeUpdateRequest;
 import com.payment.entities.Account;
 import com.payment.entities.Employee;
 import com.payment.entities.Organization;
+import com.payment.entities.Role;
+import com.payment.entities.User;
 import com.payment.repo.AccountRepo;
 import com.payment.repo.EmployeeRepo;
 import com.payment.repo.OrganizationRepo;
+import com.payment.repo.RoleRepo;
+import com.payment.repo.UserRepo;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -32,6 +36,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Autowired
     private OrganizationRepo organizationRepo;
+
+    @Autowired
+    private UserRepo userRepo;
+
+    @Autowired
+    private RoleRepo roleRepo;
 
     @Override
     public EmployeeResponse createEmployee(EmployeeRequest dto, Long orgId) {
@@ -49,6 +59,16 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setActive(true);
         employee.setOrganization(organization);
         Employee saved = employeeRepository.save(employee);
+        User user = new User();
+        user.setUserName(employee.getEmployeeName()+employee.getEmployeeId());
+        user.setOrganization(organization);
+        user.setEmployee(employee);
+        user.setActive(true);
+        user.setPassword(employee.getEmployeeName()+employee.getEmployeeId());
+        Role role = roleRepo.findByRoleName("ROLE_EMPLOYEE");
+        user.setRole(role);
+        userRepo.save(user);
+
         return mapToResponse(saved);
     }
 
