@@ -6,6 +6,7 @@ import java.util.Random;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.payment.dto.RegistrationRequest;
 import com.payment.dto.RegistrationResponse;
@@ -20,6 +21,7 @@ import com.payment.repo.RoleRepo;
 import com.payment.repo.UserRepo;
 
 @Service
+@Transactional
 public class LoginServiceImpl implements LoginService {
 
 	@Autowired
@@ -47,6 +49,20 @@ public class LoginServiceImpl implements LoginService {
 	@Override
 	public void generateOTPandSendMail(RegistrationRequest request) {
 		// TODO Auto-generated method stub
+		
+		if (organizationRepo.existsByUsers_UserName(request.getUserName())) {
+	        throw new IllegalArgumentException("Username is already taken. Please choose another one.");
+	    }
+	    if (organizationRepo.existsByOrganizationName(request.getOrganizationName())) {
+	        throw new IllegalArgumentException("Organization name already exists.");
+	    }
+	    if (organizationRepo.existsByOrganizationEmail(request.getOrganizationEmail())) {
+	        throw new IllegalArgumentException("Email is already registered.");
+	    }
+	    if (organizationRepo.existsByAccount_AccountNumber(request.getAccountNo())) {
+	        throw new IllegalArgumentException("Account number is already linked to another organization.");
+	    }
+		
 		pendingRegistration = request;
 
 		// Store files as byte[]
@@ -61,7 +77,7 @@ public class LoginServiceImpl implements LoginService {
 				companyRegistrationCertificateBytes = request.getCompanyRegistrationCertificate().getBytes();
 			}
 		} catch (Exception e) {
-
+			throw new IllegalStateException("Failed to process uploaded files: " + e.getMessage(), e);
 		}
 
 		genratedOtp = String.valueOf(new Random().nextInt(999999));
@@ -78,11 +94,15 @@ public class LoginServiceImpl implements LoginService {
 
 	@Override
 	public boolean verifyingOTP(String otp) {
+		if (genratedOtp == null) {
+	        throw new IllegalStateException("OTP not generated. Please initiate registration first.");
+	    }
 		return otp.equalsIgnoreCase(genratedOtp);
 	}
 
 	@Override
 	public RegistrationResponse registerUser() {
+			
 		Organization organization = modelMapper.map(pendingRegistration, Organization.class);
 		organization.setActive(false);
 
@@ -117,7 +137,11 @@ public class LoginServiceImpl implements LoginService {
 			user.setActive(false);
 			user.setEmployee(null);
 			user.setOrganization(organization);
+			
 			Role role = roleRepo.findByRoleName("ROLE_ORGANIZATION");
+			if (role == null) {
+                throw new IllegalStateException("Role 'ROLE_ORGANIZATION' not found in database.");
+            }
 			user.setRole(role);
 			userRepo.save(user);
 			
@@ -133,7 +157,7 @@ public class LoginServiceImpl implements LoginService {
 			return response;
 
 		} catch (Exception e) {
-			throw new RuntimeException("");
+			throw new IllegalStateException("Registration failed during document upload: " + e.getMessage());
 			// System.out.println("upload fail");
 		}
 		// return null;

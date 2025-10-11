@@ -25,6 +25,7 @@ import com.payment.entities.Organization;
 import com.payment.entities.Request;
 import com.payment.entities.Vendor;
 import com.payment.entities.VendorPayment;
+import com.payment.exception.ResourceNotFoundException;
 import com.payment.repo.OrganizationRepo;
 import com.payment.repo.RequestRepo;
 import com.payment.repo.VendorPaymentRepo;
@@ -59,7 +60,7 @@ public class VendorServiceImpl implements VendorService {
             throw new IllegalArgumentException("Account number already exists");
         }
         Organization org = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Organization not found with ID: " + orgId));
 
 
         Vendor vendor = new Vendor();
@@ -96,12 +97,12 @@ public class VendorServiceImpl implements VendorService {
     @Override
     public VendorResponse getVendorById(Long id, Long orgId) {
         Vendor vendor = vendorRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with ID: " + id));
 
         boolean belongsToOrg = vendor.getOrganizations().getOrganizationId() == orgId;
 
         if (!belongsToOrg) {
-            throw new RuntimeException("Vendor does not belong to the given organization");
+            throw new IllegalStateException("Vendor does not belong to this organization");
         }
 
         return mapToResponse(vendor);
@@ -118,14 +119,14 @@ public class VendorServiceImpl implements VendorService {
     @Override
     public VendorResponse updateVendor(Long id, VendorUpdateRequest dto, Long orgId) {
         Vendor vendor = vendorRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with ID: " + id));
 
         // Check if this vendor belongs to the given organization
         Organization currentOrg = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Organization not found with ID: " + orgId));
 
         if (!vendor.getOrganizations().equals(currentOrg)) {
-            throw new IllegalArgumentException("Vendor does not belong to this organization");
+            throw new IllegalStateException("Vendor does not belong to this organization");
         }
 
         // Vendor name
@@ -180,14 +181,14 @@ public class VendorServiceImpl implements VendorService {
     @Override
     public void deleteVendor(Long vendorId, Long orgId) {
         Vendor vendor = vendorRepo.findById(vendorId)
-                .orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with ID: " + vendorId));
 
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Organization not found with ID: " + orgId));
 
         // Check if the vendor is associated with this organization
         if (!vendor.getOrganizations().equals(organization)) {
-            throw new IllegalArgumentException("Vendor does not belong to this organization");
+            throw new IllegalStateException("Vendor does not belong to this organization");
         }
 
         // Remove the association between vendor and this specific organization
@@ -198,7 +199,7 @@ public class VendorServiceImpl implements VendorService {
         // delete it
         VendorPayment vp = vendorPaymentRepo.findByVendor(vendor).orElse(null);
         if(vp != null){
-            throw new RuntimeException("You cant delete this vendor because it has done transaction");
+            throw new IllegalStateException("Vendor has existing transactions; cannot delete");
         }
         vendorRepo.delete(vendor);
     }
@@ -206,12 +207,12 @@ public class VendorServiceImpl implements VendorService {
     @Override
     public VendorPaymentResponse initiatePayment(VendorPaymentRequest request, Long orgId) {
         Vendor vendor = vendorRepo.findById(request.getVendorId())
-                .orElseThrow(() -> new IllegalArgumentException("Vendor not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor not found"));
 
         boolean isRegistered = vendor.getOrganizations().getOrganizationId() == orgId;
 
         if (!isRegistered) {
-            throw new RuntimeException("Organization has not registered this vendor");
+            throw new IllegalStateException("Organization not registered for this vendor");
         }
 
         VendorPayment vp = new VendorPayment();
@@ -290,11 +291,11 @@ public class VendorServiceImpl implements VendorService {
     public VendorPaymentResponse sentRequestToAdmin(Long vendorPaymentId, Long orgId) {
         // 1. Check if organization exists
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new IllegalArgumentException("Organization not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
 
         // 2. Fetch the payment
         VendorPayment vp = vendorPaymentRepo.findById(vendorPaymentId)
-                .orElseThrow(() -> new RuntimeException("No such payment request"));
+                .orElseThrow(() -> new ResourceNotFoundException("Payment Request not found"));
 
         // 3. Get the vendor who raised this payment
         Vendor vendor = vp.getVendor();
@@ -303,7 +304,7 @@ public class VendorServiceImpl implements VendorService {
         boolean isAssociated = vendor.getOrganizations().getOrganizationId() == orgId;
 
         if (!isAssociated) {
-            throw new IllegalArgumentException("This payment request does not belong to the logged in organization");
+            throw new IllegalStateException("Payment does not belong to this organization");
         }
 
         if (vp.getRequest() != null) {
@@ -366,14 +367,14 @@ public class VendorServiceImpl implements VendorService {
     public VendorPaymentResponse updatePaymentRequest(Long orgId, VendorPaymentUpdate dto) {
         // 1. Fetch VendorPayment
         VendorPayment vendorPayment = vendorPaymentRepo.findById(dto.getId())
-                .orElseThrow(() -> new RuntimeException("Vendor payment not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Vendor payment not found"));
 
         // 2. Ensure that the vendor payment belongs to the organization
         Vendor vendor = vendorPayment.getVendor();
         boolean isAssociated = vendor.getOrganizations().getOrganizationId() == orgId;
 
         if (!isAssociated) {
-            throw new IllegalArgumentException("This payment does not belong to the logged-in organization");
+            throw new IllegalStateException("This payment does not belong to the logged-in organization");
         }
 
         // 3. Ensure the payment is currently rejected before allowing update

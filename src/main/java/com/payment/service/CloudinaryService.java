@@ -38,7 +38,7 @@ public class CloudinaryService {
         } catch (Exception e) {
             System.out.println("Upload failed for file: " + originalFilename);
             e.printStackTrace();
-            throw new RuntimeException("Cloudinary upload failed: " + e.getMessage(), e);
+            throw new IllegalStateException("Cloudinary upload failed: " + e.getMessage());
         }
     }
 
