@@ -13,6 +13,7 @@ import com.payment.dto.OrganizationUpdateRequest;
 import com.payment.entities.Account;
 import com.payment.entities.Address;
 import com.payment.entities.Organization;
+import com.payment.exception.ResourceNotFoundException;
 import com.payment.repo.OrganizationRepo;
 
 
@@ -43,7 +44,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public OrganizationResponse changeStatus(Long id, boolean status) {
         Organization organization = organizationRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("No orgaization with id" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization found with id: " + id));
         organization.setActive(status);
         if (status == true) {
             /*
@@ -57,7 +58,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public OrgInfoResponse getOrganization(Long id) {
         Organization organization = organizationRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("No orgaization with id" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization found with id: " + id));
         OrgInfoResponse orgInfoResponse = modelMapper.map(organization, OrgInfoResponse.class);
         return orgInfoResponse;
     }
@@ -66,7 +67,7 @@ public class OrganizationServiceImpl implements OrganizationService {
     public OrgInfoResponse updateOrganization(OrganizationUpdateRequest request, Long id) {
 
         Organization organization = organizationRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("No organization found with id " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization found with id: " + id));
 
         if (request.getOrganizationName() != null && !request.getOrganizationName().isBlank()) {
             organization.setOrganizationName(request.getOrganizationName());
@@ -109,21 +110,21 @@ public class OrganizationServiceImpl implements OrganizationService {
             try {
                 organization.getDocument().setPanUrl(cloudinaryService.uploadFile(request.getPancard().getBytes(), request.getPancard().getOriginalFilename()));
             } catch (IOException e) {
-                throw new RuntimeException();
+                throw new IllegalStateException("File upload failed: " + e.getMessage());
             }
         }
         if(request.getCancelledCheque()!=null && !request.getCancelledCheque().isEmpty()){
             try {
                 organization.getDocument().setCancelledCheque(cloudinaryService.uploadFile(request.getCancelledCheque().getBytes(), request.getCancelledCheque().getOriginalFilename()));
             } catch (IOException e) {
-                throw new RuntimeException();
+                throw new IllegalStateException("File upload failed: " + e.getMessage());
             }
         }
         if(request.getCompanyRegistrationCertificate()!=null && !request.getCompanyRegistrationCertificate().isEmpty()){
             try {
                 organization.getDocument().setCompanyRegistrationCertificate(cloudinaryService.uploadFile(request.getCompanyRegistrationCertificate().getBytes(), request.getCompanyRegistrationCertificate().getOriginalFilename()));
             } catch (IOException e) {
-                throw new RuntimeException();
+                throw new IllegalStateException("File upload failed: " + e.getMessage());
             }
         }
         organization.setActive(false);

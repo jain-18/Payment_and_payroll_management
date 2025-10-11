@@ -15,6 +15,7 @@ import com.payment.entities.Account;
 import com.payment.entities.Organization;
 import com.payment.entities.Request;
 import com.payment.entities.VendorPayment;
+import com.payment.exception.ResourceNotFoundException;
 import com.payment.repo.AccountRepo;
 import com.payment.repo.RequestRepo;
 import com.payment.repo.VendorPaymentRepo;
@@ -59,7 +60,7 @@ public class AdminServiceImpl implements AdminService {
     public RequestResp getSingleRequest(Long requestId) {
         // 1. Fetch the request from DB
         Request request = requestRepo.findById(requestId)
-                .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
+                .orElseThrow(() -> new ResourceNotFoundException("Request not found with ID: " + requestId));
 
         // 2. Get the organization
         Organization org = request.getOrganization();
@@ -90,10 +91,10 @@ public class AdminServiceImpl implements AdminService {
     public RequestResp vendorRequestApproved(Long requestId) {
         // 1. Fetch the Request
         Request request = requestRepo.findById(requestId)
-                .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
+                .orElseThrow(() -> new ResourceNotFoundException("Request not found with ID: " + requestId));
         
         if (request.getActionDate() != null) {
-            throw new RuntimeException("Request already responded");
+            throw new IllegalStateException("Request already responded");
         }
         
         // 2. Update Request fields
@@ -106,7 +107,7 @@ public class AdminServiceImpl implements AdminService {
         VendorPayment vendorPayment = vendorPaymentRepo.findByRequest(request);
 
         if (vendorPayment == null) {
-            throw new IllegalArgumentException("No VendorPayment found for this Request");
+            throw new ResourceNotFoundException("No VendorPayment found for this Request");
         }
         // 4. Update VendorPayment status to PAID
         vendorPayment.setStatus("PAID");
@@ -150,10 +151,10 @@ public class AdminServiceImpl implements AdminService {
     public RequestResp vendorRequestReject(RequestReasonDto dto) {
         // 1. Fetch the Request
         Request request = requestRepo.findById(dto.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + dto.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Request not found with ID: " + dto.getId()));
 
         if (request.getActionDate() != null) {
-            throw new RuntimeException("Request already responded");
+            throw new IllegalStateException("Request already responded");
         }
 
         // 2. Update Request fields
@@ -165,7 +166,7 @@ public class AdminServiceImpl implements AdminService {
         // 3. Fetch the VendorPayment linked with this Request
         VendorPayment vendorPayment = vendorPaymentRepo.findByRequest(request);
         if (vendorPayment == null) {
-            throw new IllegalArgumentException("No VendorPayment found for this Request");
+            throw new ResourceNotFoundException("No VendorPayment found for this Request");
         }
 
         // 4. Update VendorPayment status to REJECTED
