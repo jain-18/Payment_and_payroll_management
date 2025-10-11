@@ -38,4 +38,21 @@ public class SalaryStructureController {
         SalaryStructureResponse response = salaryStructureService.updateSalaryStructure(slipId,orgId);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/sendRequest")
+    public ResponseEntity<Void> salaryRequest(HttpServletRequest request) {
+        //get organization id from jwt
+        Long orgId = 1L;
+        salaryStructureService.sendRequestToAdmin(orgId);
+        return null;
+    }
+
+    @PostMapping("/sendSalaryUpdatedRequest")
+    public ResponseEntity<Void> salaryUpdateRequest(HttpServletRequest request) {
+        //get organization id from jwt
+        Long orgId = 1L;
+        salaryStructureService.sendRequestUpdateToAdmin(orgId);
+        return null;
+    }
+    
 }

@@ -2,6 +2,7 @@ package com.payment.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -12,11 +13,14 @@ import com.payment.dto.PendingVendorRes;
 import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
 import com.payment.entities.Account;
+import com.payment.entities.Employee;
 import com.payment.entities.Organization;
 import com.payment.entities.Request;
+import com.payment.entities.SalaryStructure;
 import com.payment.entities.VendorPayment;
 import com.payment.repo.AccountRepo;
 import com.payment.repo.RequestRepo;
+import com.payment.repo.SalaryStructureRepo;
 import com.payment.repo.VendorPaymentRepo;
 
 import jakarta.transaction.Transactional;
@@ -32,6 +36,9 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private AccountRepo accountRepo;
+
+    @Autowired
+    private SalaryStructureRepo salaryStructureRepo;
 
     @Override
     public Page<PendingVendorRes> getAllPendingVendorRequest(Pageable pageable) {
@@ -91,11 +98,11 @@ public class AdminServiceImpl implements AdminService {
         // 1. Fetch the Request
         Request request = requestRepo.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
-        
+
         if (request.getActionDate() != null) {
             throw new RuntimeException("Request already responded");
         }
-        
+
         // 2. Update Request fields
         request.setRequestStatus("APPROVED");
         request.setActionDate(LocalDate.now());
@@ -188,6 +195,106 @@ public class AdminServiceImpl implements AdminService {
             resp.setBalance(updatedRequest.getOrganization().getAccount().getBalance());
         }
 
+        return resp;
+    }
+
+    @Override
+    @Transactional
+    public RequestResp approveSalaryRequest(Long requestId) {
+        Request request = requestRepo.findById(requestId)
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + requestId));
+
+        if ("APPROVED".equalsIgnoreCase(request.getRequestStatus()) ||
+                "REJECTED".equalsIgnoreCase(request.getRequestStatus())) {
+            throw new RuntimeException("Request already responded");
+        }
+
+        Organization org = request.getOrganization();
+        if (org == null) {
+            throw new IllegalStateException("Request is not linked to any organization");
+        }
+
+        Account account = org.getAccount();
+        System.out.println(account.getBalance());
+        System.out.println(request.getTotalAmount());
+        if (account.getBalance().compareTo(request.getTotalAmount()) < 0) {
+            throw new IllegalStateException("Insufficient organization balance");
+        }
+
+        // Deduct amount
+        account.setBalance(account.getBalance().subtract(request.getTotalAmount()));
+        accountRepo.save(account);
+
+        // Approve request
+        request.setRequestStatus("APPROVED");
+        request.setActionDate(LocalDate.now());
+        requestRepo.save(request);
+
+        // Update all linked SalaryStructures
+        List<SalaryStructure> structures = salaryStructureRepo.findByRequest(request);
+        for (SalaryStructure s : structures) {
+            s.setStatus("PAID");
+        }
+        salaryStructureRepo.saveAll(structures);
+
+        // for emailing employees
+        /*
+         * for (SalaryStructure s : structures) {
+         * Employee emp = s.getEmployee();
+         * emailService.sendSalaryCreditedEmail(
+         * emp.getEmail(),
+         * emp.getEmployeeName(),
+         * s.getPeriodMonth(),
+         * s.getPeriodYear(),
+         * s.getSalaryComponent().getNetSalary());
+         * }
+         */
+
+        // Prepare response
+        RequestResp resp = new RequestResp();
+        resp.setRequestId(request.getRequestId());
+        resp.setRequestType(request.getRequestType());
+        resp.setRequestStatus(request.getRequestStatus());
+        resp.setRequestDate(request.getRequestDate());
+        resp.setTotalAmount(request.getTotalAmount());
+        resp.setBalance(account.getBalance());
+        resp.setCreatedBy(request.getCreatedBy());
+        resp.setRejectReason(request.getRejectReason());
+        return resp;
+    }
+
+    @Override
+    @Transactional
+    public RequestResp rejectSalaryRequest(RequestReasonDto dto) {
+        Request request = requestRepo.findById(dto.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Request not found with ID: " + dto.getId()));
+
+        if ("APPROVED".equalsIgnoreCase(request.getRequestStatus()) ||
+                "REJECTED".equalsIgnoreCase(request.getRequestStatus())) {
+            throw new RuntimeException("Request already responded");
+        }
+
+        request.setRequestStatus("REJECTED");
+        request.setRejectReason(dto.getRejectReason());
+        request.setActionDate(LocalDate.now());
+        requestRepo.save(request);
+
+        // Reset salary structures
+        List<SalaryStructure> structures = salaryStructureRepo.findByRequest(request);
+        for (SalaryStructure s : structures) {
+            s.setStatus("REJECTED");
+            s.setRequest(request);
+        }
+        salaryStructureRepo.saveAll(structures);
+
+        RequestResp resp = new RequestResp();
+        resp.setRequestId(request.getRequestId());
+        resp.setRequestType(request.getRequestType());
+        resp.setRequestStatus(request.getRequestStatus());
+        resp.setRequestDate(request.getRequestDate());
+        resp.setTotalAmount(request.getTotalAmount());
+        resp.setCreatedBy(request.getCreatedBy());
+        resp.setRejectReason(request.getRejectReason());
         return resp;
     }
 

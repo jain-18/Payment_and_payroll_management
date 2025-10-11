@@ -17,4 +17,8 @@ public interface AdminService {
 
     RequestResp vendorRequestReject(RequestReasonDto dto);
 
+    RequestResp approveSalaryRequest(Long requestId);
+
+    RequestResp rejectSalaryRequest(RequestReasonDto dto);
+
 }

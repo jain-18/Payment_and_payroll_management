@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.payment.dto.RequestResp;
 import com.payment.dto.VendorPaymentRequest;
 import com.payment.dto.VendorPaymentResponse;
+import com.payment.dto.VendorPaymentUpdate;
 import com.payment.dto.VendorRequest;
 import com.payment.dto.VendorResponse;
 import com.payment.dto.VendorUpdateRequest;
