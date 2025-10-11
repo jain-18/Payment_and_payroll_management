@@ -23,8 +23,6 @@ import com.payment.repo.OrganizationRepo;
 import com.payment.repo.RoleRepo;
 import com.payment.repo.UserRepo;
 
-import jakarta.persistence.EntityNotFoundException;
-
 @Service
 @Transactional
 public class EmployeeServiceImpl implements EmployeeService {
@@ -96,7 +94,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         // 4. Map to response
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
         return mapToResponse(employee);
     }
 
@@ -198,7 +195,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         // 2. Fetch employee
         Employee emp = employeeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
 
         // 3. Check ownership
         if (!emp.getOrganization().getOrganizationId().equals(orgId)) {
@@ -206,7 +203,6 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         // 4. Delete employee
-                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
         employeeRepository.delete(emp);
     }
 
