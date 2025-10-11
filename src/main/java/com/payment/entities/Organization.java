@@ -63,12 +63,7 @@ public class Organization {
 	@OneToMany(mappedBy="organization", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Employee> employee;
 	
-	@ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-	@JoinTable(
-	    name = "organization_vendors",
-	    joinColumns = @JoinColumn(name = "organization_id"),
-	    inverseJoinColumns = @JoinColumn(name = "vendor_id")
-	)
+	@OneToMany(mappedBy="organizations", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Vendor> vendors = new ArrayList<>();
 
 	@OneToOne(cascade = CascadeType.PERSIST,fetch = FetchType.LAZY)
