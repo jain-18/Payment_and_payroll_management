@@ -3,10 +3,10 @@ package com.payment.service;
 import java.math.BigDecimal;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
@@ -16,13 +16,12 @@ import com.payment.entities.Employee;
 import com.payment.entities.Organization;
 import com.payment.entities.Role;
 import com.payment.entities.User;
+import com.payment.exception.ResourceNotFoundException;
 import com.payment.repo.AccountRepo;
 import com.payment.repo.EmployeeRepo;
 import com.payment.repo.OrganizationRepo;
 import com.payment.repo.RoleRepo;
 import com.payment.repo.UserRepo;
-
-import jakarta.persistence.EntityNotFoundException;
 
 @Service
 @Transactional
@@ -46,13 +45,16 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public EmployeeResponse createEmployee(EmployeeRequest dto, Long orgId) {
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("No orgaization with id" + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("No orgaization with id" + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
         if (employeeRepository.existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("Email already exists");
+        }
+        if (accountRepository.existsByAccountNumber(dto.getAccountNumber())) {
+            throw new IllegalArgumentException("Account number already exists");
         }
 
         Employee employee = mapToEntity(dto);
@@ -76,19 +78,19 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeResponse getEmployeeById(Long id, Long orgId) {
         // 1. Check if organization exists and is active
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
 
         // 2. Fetch employee
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
 
         // 3. Check if the employee belongs to this organization
         if (!employee.getOrganization().getOrganizationId().equals(orgId)) {
-            throw new RuntimeException("This employee does not belong to the given organization");
+            throw new IllegalStateException("This employee does not belong to the given organization");
         }
 
         // 4. Map to response
@@ -99,10 +101,10 @@ public class EmployeeServiceImpl implements EmployeeService {
     public Page<EmployeeResponse> getAllEmployees(Pageable pageable, Long orgId) {
         // 1. Check if organization exists and is active
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
 
         // 2. Fetch employees for this specific organization
@@ -116,19 +118,19 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeResponse updateEmployee(Long id, EmployeeUpdateRequest dto, Long orgId) {
         // 1. Validate organization
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
 
         // 2. Fetch employee
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
 
         // 3. Check org ownership
         if (!employee.getOrganization().getOrganizationId().equals(orgId)) {
-            throw new RuntimeException("Employee does not belong to this organization");
+            throw new IllegalStateException("Employee does not belong to this organization");
         }
 
         // 4. Update fields if provided
@@ -185,19 +187,19 @@ public class EmployeeServiceImpl implements EmployeeService {
     public void deleteEmployee(Long id, Long orgId) {
         // 1. Validate organization
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("No organization with id " + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
-            throw new RuntimeException("Organization is not active for this operation");
+            throw new IllegalStateException("Organization is not active for this operation");
         }
 
         // 2. Fetch employee
         Employee emp = employeeRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Employee not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
 
         // 3. Check ownership
         if (!emp.getOrganization().getOrganizationId().equals(orgId)) {
-            throw new RuntimeException("This employee does not belong to the given organization");
+            throw new IllegalStateException("This employee does not belong to the given organization");
         }
 
         // 4. Delete employee
