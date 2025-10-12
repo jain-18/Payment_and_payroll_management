@@ -128,43 +128,58 @@ public class VendorController {
     public ResponseEntity<VendorPaymentResponse> paymentRequestToAdmin(@RequestParam Long vendorId) {
         // Long orgId = Will you method to get id of logged in organization
         Long orgId = 1L;
-        VendorPaymentResponse response = vendorService.sentRequestToAdmin(vendorId,orgId);
+        VendorPaymentResponse response = vendorService.sentRequestToAdmin(vendorId, orgId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping("/vendorPaymentRejected")
     public ResponseEntity<Page<RequestResp>> getRejectTedVendorPaymentForOrg(HttpServletRequest request,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(defaultValue = "actionDate") String sortBy
-    ) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "actionDate") String sortBy) {
         // Long orgId = Will you method to get id of logged in organization
         Long orgId = 1L;
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        return ResponseEntity.ok(vendorService.getAllVendorPaymentByStatus(orgId,"REJECTED",pageable));
+        return ResponseEntity.ok(vendorService.getAllVendorPaymentByStatus(orgId, "REJECTED", pageable));
     }
 
     @GetMapping("/vendorPaymentApproved")
     public ResponseEntity<Page<RequestResp>> getApprovedVendorPaymentForOrg(HttpServletRequest request,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(defaultValue = "actionDate") String sortBy
-    ) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "actionDate") String sortBy) {
         // Long orgId = Will you method to get id of logged in organization
         Long orgId = 1L;
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        return ResponseEntity.ok(vendorService.getAllVendorPaymentByStatus(orgId,"APPROVED",pageable));
+        return ResponseEntity.ok(vendorService.getAllVendorPaymentByStatus(orgId, "APPROVED", pageable));
+    }
+
+    @GetMapping("/vendor-payments")
+    public ResponseEntity<Page<RequestResp>> getVendorPaymentsByStatus(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "PENDING") String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "actionDate") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDir) {
+        // 🔐 Replace with actual logged-in org ID extraction
+        Long orgId = 1L;
+
+        Sort sort = sortDir.equalsIgnoreCase("DESC")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        PageRequest pageable = PageRequest.of(page, size, sort);
+
+        Page<RequestResp> response = vendorService.getAllVendorPaymentByStatus(orgId, status, pageable);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/editRejectedVendorPayment")
     public ResponseEntity<VendorPaymentResponse> getUpdatedResponse(@RequestBody VendorPaymentUpdate dto) {
-         // Long orgId = Will you method to get id of logged in organization
+        // Long orgId = Will you method to get id of logged in organization
         Long orgId = 1L;
-        return ResponseEntity.ok(vendorService.updatePaymentRequest(orgId,dto));
+        return ResponseEntity.ok(vendorService.updatePaymentRequest(orgId, dto));
     }
-    
-    
-
-    
 
 }

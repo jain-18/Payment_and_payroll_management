@@ -28,69 +28,40 @@ public class AdminController {
     @Autowired
     AdminService adminService;
 
-    @GetMapping("/pendingVendor")
-    public ResponseEntity<Page<VendorRequestRes>> getAllPendingVendor(
+    @GetMapping("/vendor-requests")
+    public ResponseEntity<Page<VendorRequestRes>> getAllVendorRequestsByStatus(
+            @RequestParam(defaultValue = "PENDING") String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "requestDate") String sortBy) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<VendorRequestRes> response = adminService.getALLVendorRequestByStatus(pageable, "PENDING",
+            @RequestParam(defaultValue = "requestDate") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDir) {
+
+        Sort sort = sortDir.equalsIgnoreCase("DESC") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+
+        PageRequest pageable = PageRequest.of(page, size, sort);
+
+        Page<VendorRequestRes> response = adminService.getALLVendorRequestByStatus(
+                pageable,
+                status,
                 "VENDORPAYMENT");
+
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/approvedVendor")
-    public ResponseEntity<Page<VendorRequestRes>> getAllApprovedVendor(
+    @GetMapping("/salary-requests")
+    public ResponseEntity<Page<SalaryRequestRes>> getAllSalaryRequestsByStatus(
+            @RequestParam(defaultValue = "PENDING") String status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "requestDate") String sortBy) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<VendorRequestRes> response = adminService.getALLVendorRequestByStatus(pageable, "APPROVED",
-                "VENDORPAYMENT");
-        return ResponseEntity.ok(response);
-    }
+            @RequestParam(defaultValue = "requestDate") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDir) {
 
-    @GetMapping("/rejectedVendor")
-    public ResponseEntity<Page<VendorRequestRes>> getAllRejectedVendor(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "requestDate") String sortBy) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<VendorRequestRes> response = adminService.getALLVendorRequestByStatus(pageable, "REJECTED",
-                "VENDORPAYMENT");
-        return ResponseEntity.ok(response);
-    }
+        Sort sort = sortDir.equalsIgnoreCase("DESC") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
 
-    @GetMapping("/pendingSalary")
-    public ResponseEntity<Page<SalaryRequestRes>> getAllPendindSalary(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "requestDate") String sortBy) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<SalaryRequestRes> response = adminService.getALLSalaryRequestByStatus(pageable, "PENDING",
-                "SALARYPAYMENT");
-        return ResponseEntity.ok(response);
-    }
+        PageRequest pageable = PageRequest.of(page, size, sort);
 
-    @GetMapping("/approvedSalary")
-    public ResponseEntity<Page<SalaryRequestRes>> getAllApprovedSalary(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "requestDate") String sortBy) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<SalaryRequestRes> response = adminService.getALLSalaryRequestByStatus(pageable, "APPROVED",
-                "SALARYPAYMENT");
-        return ResponseEntity.ok(response);
-    }
+        Page<SalaryRequestRes> response = adminService.getALLSalaryRequestByStatus(pageable, status, "SALARYPAYMENT");
 
-    @GetMapping("/rejectedSalary")
-    public ResponseEntity<Page<SalaryRequestRes>> getAllRejectedSalary(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "requestDate") String sortBy) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<SalaryRequestRes> response = adminService.getALLSalaryRequestByStatus(pageable, "REJECTED",
-                "SALARYPAYMENT");
         return ResponseEntity.ok(response);
     }
 

@@ -7,9 +7,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.payment.dto.SalaryRequestOfMonth;
 import com.payment.dto.SalaryStructureRequest;
 import com.payment.dto.SalaryStructureResponse;
 import com.payment.entities.Employee;
@@ -232,7 +235,6 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
                 .map(s -> s.getSalaryComponent().getNetSalary())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-
         // 4. Create a new Request for the updated salaries
         Request newRequest = new Request();
         newRequest.setCreatedBy(organization.getOrganizationName());
@@ -250,6 +252,31 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
             ss.setStatus("PENDING"); // reset status to PENDING
             salaryStructureRepository.save(ss);
         }
+    }
+
+    @Override
+    public Page<SalaryRequestOfMonth> getAllSalarySlip(Long orgId, String status, PageRequest pageable) {
+        Page<SalaryStructure> slips;
+
+        if (status == null || status.isBlank()) {
+            // If no status provided, fetch all
+            slips = salaryStructureRepository.findByOrganizationOrganizationId(orgId, pageable);
+        } else {
+            slips = salaryStructureRepository.findByOrganizationOrganizationIdAndStatusIgnoreCase(orgId, status,
+                    pageable);
+        }
+
+        return slips.map(slip -> {
+            SalaryRequestOfMonth res = new SalaryRequestOfMonth();
+            res.setSlipId(slip.getSlipId());
+            res.setEmployeeId(slip.getEmployee().getEmployeeId());
+            res.setEmployee(slip.getEmployee().getEmployeeName()); // assuming getter
+            res.setSalary(slip.getSalaryComponent().getNetSalary());
+            res.setStatus(slip.getStatus());
+            res.setPeriodMonth(slip.getPeriodMonth());
+            res.setPeriodYear(slip.getPeriodYear());
+            return res;
+        });
     }
 
 }
