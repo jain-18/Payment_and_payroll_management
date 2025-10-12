@@ -22,23 +22,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
 
 @RestController
-@RequestMapping("/potal/orgainzations")
+@RequestMapping("/portal/organizations")
 public class OrganizationController {
 
     private OrganizationService organizationService;
 
     public OrganizationController(OrganizationService organizationService) {
         this.organizationService = organizationService;
-    }
-
-    @GetMapping()
-    public ResponseEntity<Page<OrganizationResponse>> getAllOrganization(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "organizationName") String sortBy) {
-        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<OrganizationResponse> response = organizationService.getAllOrganization(pageable);
-        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/status")
@@ -60,23 +50,22 @@ public class OrganizationController {
         return ResponseEntity.ok(org);
     }
 
-    @GetMapping("/active")
-    public ResponseEntity<Page<OrganizationResponse>> getActiveOrg(
+    @GetMapping()
+    public ResponseEntity<Page<OrganizationResponse>> getOrganizations(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "organizationName") String sortBy) {
-         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<OrganizationResponse> response = organizationService.getOrganizationByStatus(pageable,true);
-        return ResponseEntity.ok(response);
-    }
+            @RequestParam(defaultValue = "organizationName") String sortBy,
+            @RequestParam(required = false) Boolean active // optional filter
+    ) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<OrganizationResponse> response;
 
-    @GetMapping("/inActive")
-    public ResponseEntity<Page<OrganizationResponse>> getInActiveOrg(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "organizationName") String sortBy) {
-         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<OrganizationResponse> response = organizationService.getOrganizationByStatus(pageable,false);
+        if (active == null) {
+            response = organizationService.getAllOrganization(pageable);
+        } else {
+            response = organizationService.getOrganizationByStatus(pageable, active);
+        }
+
         return ResponseEntity.ok(response);
     }
 
