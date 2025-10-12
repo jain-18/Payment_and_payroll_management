@@ -10,12 +10,12 @@ import lombok.Setter;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class PendingVendorRes {
+public class SalaryRequestRes {
     private Long requestId;
     private String requestStatus;
     private LocalDate requestDate;
     private String createdBy;
-    private String to;
+    private String requestType;
     private BigDecimal totalAmount;
 
 }

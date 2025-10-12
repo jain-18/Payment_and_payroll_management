@@ -6,12 +6,14 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import com.payment.dto.PendingVendorRes;
+import com.payment.dto.VendorRequestRes;
 import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
+import com.payment.dto.SalaryRequestRes;
 import com.payment.entities.Account;
 import com.payment.entities.Employee;
 import com.payment.entities.Organization;
@@ -42,23 +44,39 @@ public class AdminServiceImpl implements AdminService {
     private SalaryStructureRepo salaryStructureRepo;
 
     @Override
-    public Page<PendingVendorRes> getAllPendingVendorRequest(Pageable pageable) {
-        Page<Request> pendingRequests = requestRepo.findByRequestStatus("PENDING", pageable);
-
-        return pendingRequests.map(req -> {
-            PendingVendorRes res = new PendingVendorRes();
+    public Page<VendorRequestRes> getALLVendorRequestByStatus(PageRequest pageable, String status, String requestType) {
+        Page<Request> request = requestRepo.findByRequestStatusAndRequestTypeIgnoreCase(status,
+                requestType, pageable);
+        return request.map(req -> {
+            VendorRequestRes res = new VendorRequestRes();
             res.setRequestId(req.getRequestId());
             res.setRequestStatus(req.getRequestStatus());
             res.setRequestDate(req.getRequestDate());
             res.setCreatedBy(req.getCreatedBy());
+            res.setTotalAmount(req.getTotalAmount());
+            res.setRequestType(req.getRequestType());
 
-            // Get vendor name from VendorPayment
             VendorPayment vp = vendorPaymentRepo.findByRequest(req);
             if (vp != null && vp.getVendor() != null) {
                 res.setTo(vp.getVendor().getVendorName());
             }
+            return res;
+        });
+    }
 
+    @Override
+    public Page<SalaryRequestRes> getALLSalaryRequestByStatus(PageRequest pageable, String status, String requestType) {
+        Page<Request> request = requestRepo.findByRequestStatusAndRequestTypeIgnoreCase(status,
+                requestType, pageable);
+
+        return request.map(req -> {
+            SalaryRequestRes res = new SalaryRequestRes();
+            res.setRequestId(req.getRequestId());
+            res.setRequestStatus(req.getRequestStatus());
+            res.setRequestDate(req.getRequestDate());
+            res.setCreatedBy(req.getCreatedBy());
             res.setTotalAmount(req.getTotalAmount());
+            res.setRequestType(req.getRequestType());
             return res;
         });
     }
@@ -88,6 +106,7 @@ public class AdminServiceImpl implements AdminService {
         resp.setTotalAmount(request.getTotalAmount());
         resp.setBalance(balance);
         resp.setCreatedBy(request.getCreatedBy());
+        resp.setActionDate(request.getActionDate());
         resp.setRejectReason(request.getRejectReason());
 
         return resp;
@@ -99,7 +118,7 @@ public class AdminServiceImpl implements AdminService {
         // 1. Fetch the Request
         Request request = requestRepo.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Request not found with ID: " + requestId));
-        
+
         if (request.getActionDate() != null) {
             throw new IllegalStateException("Request already responded");
         }

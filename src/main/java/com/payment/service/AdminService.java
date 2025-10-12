@@ -1,15 +1,14 @@
 package com.payment.service;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import com.payment.dto.PendingVendorRes;
+import org.springframework.data.domain.PageRequest;
 import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
+import com.payment.dto.SalaryRequestRes;
+import com.payment.dto.VendorRequestRes;
 
 public interface AdminService {
 
-    Page<PendingVendorRes> getAllPendingVendorRequest(Pageable pageable);
 
     RequestResp getSingleRequest(Long requestId);
 
@@ -21,4 +20,7 @@ public interface AdminService {
 
     RequestResp rejectSalaryRequest(RequestReasonDto dto);
 
+    public Page<VendorRequestRes> getALLVendorRequestByStatus(PageRequest pageable, String status, String requestType);
+
+    Page<SalaryRequestRes> getALLSalaryRequestByStatus(PageRequest pageable, String status, String requestType);
 }

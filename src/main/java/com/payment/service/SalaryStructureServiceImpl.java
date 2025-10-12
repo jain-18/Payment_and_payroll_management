@@ -239,7 +239,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
         newRequest.setOrganization(organization);
         newRequest.setRequestDate(LocalDate.now());
         newRequest.setRequestStatus("PENDING");
-        newRequest.setRequestType("SalaryUpdatePayment");
+        newRequest.setRequestType("SALARYPAYMENT");
         newRequest.setTotalAmount(totalSalary);
 
         Request savedRequest = requestRepo.save(newRequest);

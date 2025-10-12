@@ -22,4 +22,8 @@ public interface RequestRepo extends JpaRepository<Request, Long> {
             LocalDate startDate,
             LocalDate endDate,
             BigDecimal totalAmount);
+
+    Page<Request> findByRequestStatusAndRequestTypeIgnoreCase(String requestStatus, String requestType,
+            Pageable pageable);
+
 }
