@@ -22,4 +22,8 @@ public interface OrganizationService {
     Page<OrganizationResponse> getOrganizationByStatus(Pageable pageable,boolean status);
 
     Page<RaiseConcernedResp> getAllRaisedConcernsOfOrg(PageRequest pageable, Long orgId);
+
+    RaiseConcernedResp solvedRaiseConcern(Long concernId, Long orgId);
+
+    void deleteConcern(Long concernId, Long orgId);
 }
