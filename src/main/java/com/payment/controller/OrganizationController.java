@@ -9,6 +9,7 @@ import com.payment.dto.OrganizationUpdateRequest;
 import com.payment.dto.RaiseConcernedResp;
 import com.payment.service.OrganizationService;
 
+import jakarta.servlet.http.HttpServlet;
 import jakarta.validation.Valid;
 
 import org.springframework.data.domain.Page;
@@ -16,11 +17,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @RestController
 @RequestMapping("/portal/organizations")
@@ -70,7 +74,9 @@ public class OrganizationController {
         return ResponseEntity.ok(response);
     }
 
-    
+    //the process is after getting list of concerns, there will bve 3 options delete, solved and edit
+    // After clicking the edit the it can get stored in local storage, the data of concern
+    // after editEmployee -> saveEmployee -> updateSalaryStructure -> Send request to admin-> organization have to mark maually to solved
     @GetMapping("/org-raised-concerns")
     public ResponseEntity<Page<RaiseConcernedResp>> getAllConcernsOfOrgagaization(
             @RequestParam(defaultValue = "0") int page,
@@ -82,5 +88,20 @@ public class OrganizationController {
         Page<RaiseConcernedResp> response = organizationService.getAllRaisedConcernsOfOrg(pageable, orgId);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/solvedRaiseConcern")
+    public ResponseEntity<RaiseConcernedResp> solvedRaised(@RequestParam Long concernId,HttpServlet httpServlet) {
+        Long orgId = 1L;
+        RaiseConcernedResp resp = organizationService.solvedRaiseConcern(concernId,orgId);
+        return ResponseEntity.ok(resp);
+    }
+
+    @DeleteMapping("/concerns")
+    public ResponseEntity<Void> deleteConcern(@RequestParam Long concernId){
+        Long orgId = 1L;
+        organizationService.deleteConcern(concernId,orgId);
+        return ResponseEntity.noContent().build();
+    }
+    
 
 }

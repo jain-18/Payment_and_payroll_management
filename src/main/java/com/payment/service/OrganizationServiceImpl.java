@@ -18,9 +18,13 @@ import com.payment.entities.Address;
 import com.payment.entities.Employee;
 import com.payment.entities.Organization;
 import com.payment.entities.RaiseConcerns;
+import com.payment.entities.SalaryStructure;
 import com.payment.exception.ResourceNotFoundException;
 import com.payment.repo.OrganizationRepo;
 import com.payment.repo.RaiseConcernsRepo;
+import com.payment.repo.SalaryStructureRepo;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class OrganizationServiceImpl implements OrganizationService {
@@ -34,6 +38,9 @@ public class OrganizationServiceImpl implements OrganizationService {
     
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private SalaryStructureRepo salaryStructureRepo;
 
     public OrganizationServiceImpl(OrganizationRepo organizationRepo, ModelMapper modelMapper,
             CloudinaryService cloudinaryService) {
@@ -190,6 +197,58 @@ public class OrganizationServiceImpl implements OrganizationService {
             
             return resp;
         });
+    }
+
+    @Override
+    @Transactional
+    public RaiseConcernedResp solvedRaiseConcern(Long concernId, Long orgId) {
+        // 1. Find the concern by ID
+        RaiseConcerns concern = raiseConcernsRepo.findById(concernId)
+                .orElseThrow(() -> new RuntimeException("Concern not found with ID: " + concernId));
+
+        // 2. Validate that the concern belongs to the organization
+        if (!concern.getOrganization().getOrganizationId().equals(orgId)) {
+            throw new RuntimeException("This concern does not belong to your organization");
+        }
+
+        // 3. Mark as solved
+        concern.setSolved(true);
+        raiseConcernsRepo.save(concern);
+
+        // 4. Map entity to response DTO
+        RaiseConcernedResp resp = new RaiseConcernedResp();
+        resp.setConcernId(concern.getConcernId());
+        resp.setOrganizationName(concern.getOrganization().getOrganizationName());
+        resp.setRaiseAt(concern.getRaiseAt().toString());
+        resp.setSolved(concern.isSolved());
+
+        return resp;
+    }
+
+    @Override
+    @Transactional
+    public void deleteConcern(Long concernId, Long orgId) {
+        // 1. Find the concern by ID
+        RaiseConcerns concern = raiseConcernsRepo.findById(concernId)
+                .orElseThrow(() -> new RuntimeException("Concern not found with ID: " + concernId));
+
+        // 2. Validate that the concern belongs to the organization
+        if (!concern.getOrganization().getOrganizationId().equals(orgId)) {
+            throw new RuntimeException("This concern does not belong to your organization");
+        }
+
+        SalaryStructure ss = concern.getSalaryStructure();
+        ss.setStatus("PAID");
+        salaryStructureRepo.save(ss);
+        
+
+        // 3. Check if the concern is already solved
+        if (concern.isSolved()) {
+            throw new RuntimeException("Cannot delete a solved concern");
+        }
+
+        // 4. Delete the concern
+        raiseConcernsRepo.delete(concern);
     }
 
 }

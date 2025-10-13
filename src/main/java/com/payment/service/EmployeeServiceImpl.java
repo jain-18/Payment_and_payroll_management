@@ -291,6 +291,10 @@ public class EmployeeServiceImpl implements EmployeeService {
         SalaryStructure salaryStructure = salaryStructureRepo.findById(slipId)
                 .orElseThrow(() -> new ResourceNotFoundException("Salary slip not found with id: " + slipId));
 
+        salaryStructure.setStatus("CONCERNED");
+        System.out.println(salaryStructure.getStatus());
+        salaryStructureRepo.save(salaryStructure);
+
         // Create and save concern
         RaiseConcerns concern = new RaiseConcerns();
         concern.setEmployee(employee);
