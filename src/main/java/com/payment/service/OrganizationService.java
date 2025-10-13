@@ -1,11 +1,13 @@
 package com.payment.service;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.payment.dto.OrgInfoResponse;
 import com.payment.dto.OrganizationResponse;
 import com.payment.dto.OrganizationUpdateRequest;
+import com.payment.dto.RaiseConcernedResp;
 
 public interface OrganizationService {
 
@@ -18,4 +20,6 @@ public interface OrganizationService {
     OrgInfoResponse updateOrganization(OrganizationUpdateRequest request,Long id);
 
     Page<OrganizationResponse> getOrganizationByStatus(Pageable pageable,boolean status);
+
+    Page<RaiseConcernedResp> getAllRaisedConcernsOfOrg(PageRequest pageable, Long orgId);
 }

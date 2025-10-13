@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.payment.dto.OrgInfoResponse;
 import com.payment.dto.OrganizationResponse;
 import com.payment.dto.OrganizationUpdateRequest;
+import com.payment.dto.RaiseConcernedResp;
 import com.payment.service.OrganizationService;
 
 import jakarta.validation.Valid;
@@ -66,6 +67,19 @@ public class OrganizationController {
             response = organizationService.getOrganizationByStatus(pageable, active);
         }
 
+        return ResponseEntity.ok(response);
+    }
+
+    
+    @GetMapping("/org-raised-concerns")
+    public ResponseEntity<Page<RaiseConcernedResp>> getAllConcernsOfOrgagaization(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "raiseAt") String sortBy
+    ){
+        Long orgId = 1L;
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
+        Page<RaiseConcernedResp> response = organizationService.getAllRaisedConcernsOfOrg(pageable, orgId);
         return ResponseEntity.ok(response);
     }
 

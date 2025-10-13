@@ -1,9 +1,11 @@
 package com.payment.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,16 +13,21 @@ import org.springframework.transaction.annotation.Transactional;
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
 import com.payment.dto.EmployeeUpdateRequest;
+import com.payment.dto.RaiseConcernedResp;
 import com.payment.entities.Account;
 import com.payment.entities.Employee;
 import com.payment.entities.Organization;
+import com.payment.entities.RaiseConcerns;
 import com.payment.entities.Role;
+import com.payment.entities.SalaryStructure;
 import com.payment.entities.User;
 import com.payment.exception.ResourceNotFoundException;
 import com.payment.repo.AccountRepo;
 import com.payment.repo.EmployeeRepo;
 import com.payment.repo.OrganizationRepo;
+import com.payment.repo.RaiseConcernsRepo;
 import com.payment.repo.RoleRepo;
+import com.payment.repo.SalaryStructureRepo;
 import com.payment.repo.UserRepo;
 
 @Service
@@ -42,6 +49,12 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Autowired
     private RoleRepo roleRepo;
 
+    @Autowired
+    private SalaryStructureRepo salaryStructureRepo;
+
+    @Autowired
+    private RaiseConcernsRepo raiseConcernsRepo;
+
     @Override
     public EmployeeResponse createEmployee(EmployeeRequest dto, Long orgId) {
         Organization organization = organizationRepo.findById(orgId)
@@ -62,11 +75,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setOrganization(organization);
         Employee saved = employeeRepository.save(employee);
         User user = new User();
-        user.setUserName(employee.getEmployeeName()+employee.getEmployeeId());
+        user.setUserName(employee.getEmployeeName() + employee.getEmployeeId());
         user.setOrganization(organization);
         user.setEmployee(employee);
         user.setActive(true);
-        user.setPassword(employee.getEmployeeName()+employee.getEmployeeId());
+        user.setPassword(employee.getEmployeeName() + employee.getEmployeeId());
         Role role = roleRepo.findByRoleName("ROLE_EMPLOYEE");
         user.setRole(role);
         userRepo.save(user);
@@ -243,4 +256,58 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
         return dto;
     }
+
+    @Override
+    public void raiseConcerns(Long slipId, Long empId, Long orgId) {
+
+        // Check if concern already exists
+        boolean alreadyRaised = raiseConcernsRepo
+                .existsByEmployeeEmployeeIdAndOrganizationOrganizationIdAndSalaryStructureSlipId(empId, orgId, slipId);
+
+        if (alreadyRaised) {
+            throw new RuntimeException("Concern already raised for this salary slip.");
+        }
+
+        // Fetch Employee
+        Employee employee = employeeRepository.findById(empId)
+                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + empId));
+
+        // Fetch Organization
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new RuntimeException("Organization not found with id: " + orgId));
+
+        // Fetch Salary Structure
+        SalaryStructure salaryStructure = salaryStructureRepo.findById(slipId)
+                .orElseThrow(() -> new RuntimeException("Salary slip not found with id: " + slipId));
+
+        // Create and save concern
+        RaiseConcerns concern = new RaiseConcerns();
+        concern.setEmployee(employee);
+        concern.setOrganization(organization);
+        concern.setSalaryStructure(salaryStructure);
+        concern.setRaiseAt(LocalDate.now());
+        concern.setSolved(false);
+
+        raiseConcernsRepo.save(concern);
+    }
+
+    @Override
+    public Page<RaiseConcernedResp> getAllRaisedConcerns(PageRequest pageable, Long orgId, Long empId) {
+
+        Page<RaiseConcerns> concernsPage = raiseConcernsRepo
+                .findByOrganizationOrganizationIdAndEmployeeEmployeeId(orgId, empId, pageable);
+
+        return concernsPage.map(concern -> {
+            RaiseConcernedResp resp = new RaiseConcernedResp();
+            resp.setOrganizationName(concern.getOrganization().getOrganizationName());
+
+            // Format the date or store it as string — depends on how you want it
+            resp.setRaiseAt(concern.getRaiseAt() != null ? concern.getRaiseAt().toString() : "N/A");
+            resp.setSolved(concern.isSolved());
+            return resp;
+        });
+    }
+
+    
+
 }

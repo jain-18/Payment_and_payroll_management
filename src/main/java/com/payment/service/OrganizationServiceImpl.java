@@ -3,19 +3,23 @@ package com.payment.service;
 import java.io.IOException;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.payment.dto.OrgInfoResponse;
 import com.payment.dto.OrganizationResponse;
 import com.payment.dto.OrganizationUpdateRequest;
+import com.payment.dto.RaiseConcernedResp;
 import com.payment.entities.Account;
 import com.payment.entities.Address;
 import com.payment.entities.Organization;
+import com.payment.entities.RaiseConcerns;
 import com.payment.exception.ResourceNotFoundException;
 import com.payment.repo.OrganizationRepo;
-
+import com.payment.repo.RaiseConcernsRepo;
 
 @Service
 public class OrganizationServiceImpl implements OrganizationService {
@@ -24,7 +28,11 @@ public class OrganizationServiceImpl implements OrganizationService {
     private ModelMapper modelMapper;
     private CloudinaryService cloudinaryService;
 
-    public OrganizationServiceImpl(OrganizationRepo organizationRepo, ModelMapper modelMapper,CloudinaryService cloudinaryService) {
+    @Autowired
+    private RaiseConcernsRepo raiseConcernsRepo;
+
+    public OrganizationServiceImpl(OrganizationRepo organizationRepo, ModelMapper modelMapper,
+            CloudinaryService cloudinaryService) {
         this.organizationRepo = organizationRepo;
         this.modelMapper = modelMapper;
         this.cloudinaryService = cloudinaryService;
@@ -106,23 +114,28 @@ public class OrganizationServiceImpl implements OrganizationService {
                 acc.setIfsc(request.getAccount().getIfsc());
             }
         }
-        if(request.getPancard()!=null && !request.getPancard().isEmpty()){
+        if (request.getPancard() != null && !request.getPancard().isEmpty()) {
             try {
-                organization.getDocument().setPanUrl(cloudinaryService.uploadFile(request.getPancard().getBytes(), request.getPancard().getOriginalFilename()));
+                organization.getDocument().setPanUrl(cloudinaryService.uploadFile(request.getPancard().getBytes(),
+                        request.getPancard().getOriginalFilename()));
             } catch (IOException e) {
                 throw new IllegalStateException("File upload failed: " + e.getMessage());
             }
         }
-        if(request.getCancelledCheque()!=null && !request.getCancelledCheque().isEmpty()){
+        if (request.getCancelledCheque() != null && !request.getCancelledCheque().isEmpty()) {
             try {
-                organization.getDocument().setCancelledCheque(cloudinaryService.uploadFile(request.getCancelledCheque().getBytes(), request.getCancelledCheque().getOriginalFilename()));
+                organization.getDocument().setCancelledCheque(cloudinaryService.uploadFile(
+                        request.getCancelledCheque().getBytes(), request.getCancelledCheque().getOriginalFilename()));
             } catch (IOException e) {
                 throw new IllegalStateException("File upload failed: " + e.getMessage());
             }
         }
-        if(request.getCompanyRegistrationCertificate()!=null && !request.getCompanyRegistrationCertificate().isEmpty()){
+        if (request.getCompanyRegistrationCertificate() != null
+                && !request.getCompanyRegistrationCertificate().isEmpty()) {
             try {
-                organization.getDocument().setCompanyRegistrationCertificate(cloudinaryService.uploadFile(request.getCompanyRegistrationCertificate().getBytes(), request.getCompanyRegistrationCertificate().getOriginalFilename()));
+                organization.getDocument().setCompanyRegistrationCertificate(
+                        cloudinaryService.uploadFile(request.getCompanyRegistrationCertificate().getBytes(),
+                                request.getCompanyRegistrationCertificate().getOriginalFilename()));
             } catch (IOException e) {
                 throw new IllegalStateException("File upload failed: " + e.getMessage());
             }
@@ -133,12 +146,26 @@ public class OrganizationServiceImpl implements OrganizationService {
     }
 
     @Override
-    public Page<OrganizationResponse> getOrganizationByStatus(Pageable pageable,boolean status) {
-       Page<Organization> organizations = organizationRepo.findByIsActive(status,pageable);
+    public Page<OrganizationResponse> getOrganizationByStatus(Pageable pageable, boolean status) {
+        Page<Organization> organizations = organizationRepo.findByIsActive(status, pageable);
         // Convert Page<Organization> → Page<OrganizationResponse>
         Page<OrganizationResponse> response = organizations
                 .map(org -> modelMapper.map(org, OrganizationResponse.class));
         return response;
+    }
+
+    @Override
+    public Page<RaiseConcernedResp> getAllRaisedConcernsOfOrg(PageRequest pageable, Long orgId) {
+        Page<RaiseConcerns> concernsPage = raiseConcernsRepo.findByOrganizationOrganizationId(orgId, pageable);
+
+        return concernsPage.map(concern -> {
+            RaiseConcernedResp resp = new RaiseConcernedResp();
+            resp.setConcernId(concern.getConcernId());
+            resp.setOrganizationName(concern.getOrganization().getOrganizationName());
+            resp.setRaiseAt(concern.getRaiseAt().toString()); // you can format if needed
+            resp.setSolved(concern.isSolved());
+            return resp;
+        });
     }
 
 }

@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
 import com.payment.dto.EmployeeUpdateRequest;
+import com.payment.dto.RaiseConcernedResp;
 import com.payment.service.EmployeeService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,16 +36,17 @@ public class EmployeeController {
 
     @PostMapping
     public ResponseEntity<EmployeeResponse> createEmployee(@Valid @RequestBody EmployeeRequest dto) {
-        //code for fetching orgId from jwt
+        // code for fetching orgId from jwt
         Long orgId = 1L;
-        return new ResponseEntity<>(employeeService.createEmployee(dto,orgId), HttpStatus.CREATED);
+        return new ResponseEntity<>(employeeService.createEmployee(dto, orgId), HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long id,HttpServletRequest httpServletRequest) {
-        //code for fetching orgId from jwt
+    public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long id,
+            HttpServletRequest httpServletRequest) {
+        // code for fetching orgId from jwt
         Long orgId = 1L;
-        return ResponseEntity.ok(employeeService.getEmployeeById(id,orgId));
+        return ResponseEntity.ok(employeeService.getEmployeeById(id, orgId));
     }
 
     @GetMapping
@@ -53,27 +55,49 @@ public class EmployeeController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "employeeName") String sortBy,
             HttpServletRequest httpServletRequest) {
-        
-        //code for fetching orgId from jwt
+
+        // code for fetching orgId from jwt
         Long orgId = 1L;
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<EmployeeResponse> response = employeeService.getAllEmployees(pageable,orgId);
+        Page<EmployeeResponse> response = employeeService.getAllEmployees(pageable, orgId);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<EmployeeResponse> updateEmployee(@PathVariable Long id,
-                                                              @Valid @RequestBody EmployeeUpdateRequest dto,HttpServletRequest httpServletRequest) {
-        //code for fetching orgId from jwt
+            @Valid @RequestBody EmployeeUpdateRequest dto, HttpServletRequest httpServletRequest) {
+        // code for fetching orgId from jwt
         Long orgId = 1L;
-        return ResponseEntity.ok(employeeService.updateEmployee(id, dto,orgId));
+        return ResponseEntity.ok(employeeService.updateEmployee(id, dto, orgId));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEmployee(@PathVariable Long id,HttpServletRequest httpServletRequest) {
-        //code for fetching orgId from jwt
+    public ResponseEntity<Void> deleteEmployee(@PathVariable Long id, HttpServletRequest httpServletRequest) {
+        // code for fetching orgId from jwt
         Long orgId = 1L;
-        employeeService.deleteEmployee(id,orgId);
+        employeeService.deleteEmployee(id, orgId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/raise-concerns")
+    public ResponseEntity<Void> raiseConcerns(@RequestParam Long slipId){
+        Long empId= 2L;
+        Long orgId = 1L;
+        employeeService.raiseConcerns(slipId,empId,orgId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/raised-concerns")
+    public ResponseEntity<Page<RaiseConcernedResp>> getAllConcerns(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "raiseAt") String sortBy
+    ){
+        Long empId= 2L;
+        Long orgId = 1L;
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
+        Page<RaiseConcernedResp> response = employeeService.getAllRaisedConcerns(pageable, orgId,empId);
+        return ResponseEntity.ok(response);
+    }
+
 }
