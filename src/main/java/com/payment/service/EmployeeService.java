@@ -1,11 +1,13 @@
 package com.payment.service;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
 import com.payment.dto.EmployeeUpdateRequest;
+import com.payment.dto.RaiseConcernedResp;
 
 public interface EmployeeService {
 
@@ -18,4 +20,8 @@ public interface EmployeeService {
     EmployeeResponse updateEmployee(Long id, EmployeeUpdateRequest dto,Long orgId);
 
     void deleteEmployee(Long id,Long orgId);
+
+    void raiseConcerns(Long slipId, Long empId, Long orgId);
+
+    Page<RaiseConcernedResp> getAllRaisedConcerns(PageRequest pageable, Long orgId, Long empId);
 }
