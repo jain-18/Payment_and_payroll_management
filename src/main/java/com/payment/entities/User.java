@@ -38,10 +38,9 @@ public class User {
 	
 	@NotBlank(message = "password cannot be blank")
 	@Column(name = "password")
-	@Size(max = 50)
 	private String password;
 	
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "role_id")
 	private Role role;
 	

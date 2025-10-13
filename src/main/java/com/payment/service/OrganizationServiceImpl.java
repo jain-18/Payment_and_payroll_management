@@ -15,6 +15,7 @@ import com.payment.dto.OrganizationUpdateRequest;
 import com.payment.dto.RaiseConcernedResp;
 import com.payment.entities.Account;
 import com.payment.entities.Address;
+import com.payment.entities.Employee;
 import com.payment.entities.Organization;
 import com.payment.entities.RaiseConcerns;
 import com.payment.exception.ResourceNotFoundException;
@@ -30,6 +31,9 @@ public class OrganizationServiceImpl implements OrganizationService {
 
     @Autowired
     private RaiseConcernsRepo raiseConcernsRepo;
+    
+    @Autowired
+    private EmailService emailService;
 
     public OrganizationServiceImpl(OrganizationRepo organizationRepo, ModelMapper modelMapper,
             CloudinaryService cloudinaryService) {
@@ -55,9 +59,15 @@ public class OrganizationServiceImpl implements OrganizationService {
                 .orElseThrow(() -> new ResourceNotFoundException("No organization found with id: " + id));
         organization.setActive(status);
         if (status == true) {
-            /*
-             * code for email to organization
-             */
+        	if (organization.getOrganizationEmail() != null && !organization.getOrganizationEmail().isBlank()) {
+                String subject = "Organization Account Activated";
+                String message = "Dear " + organization.getOrganizationName() + ",\n\n"
+                        + "Your organization account has been activated successfully.\n"
+                        + "You can now log in and start using our services.\n\n"
+                        + "Regards,\nPaymentApp Team";
+
+                emailService.sendCustomEmail(organization.getOrganizationEmail(), subject, message);
+        }
         }
         organization = organizationRepo.save(organization);
         return modelMapper.map(organization, OrganizationResponse.class);
@@ -164,6 +174,20 @@ public class OrganizationServiceImpl implements OrganizationService {
             resp.setOrganizationName(concern.getOrganization().getOrganizationName());
             resp.setRaiseAt(concern.getRaiseAt().toString()); // you can format if needed
             resp.setSolved(concern.isSolved());
+            
+            if (concern.isSolved()) {
+                Employee emp = concern.getEmployee();
+                if (emp != null && emp.getEmail() != null && !emp.getEmail().isBlank()) {
+                    String subject = "Your Raised Concern Has Been Resolved";
+                    String message = "Dear " + emp.getEmployeeName() + ",\n\n"
+                            + "We’re pleased to inform you that your concern raised on "
+                            + concern.getRaiseAt() + " has been successfully resolved.\n\n"
+                            + "If you have any further questions, feel free to reach out.\n\n"
+                            + "Regards,\nPaymentApp Support Team";
+                    emailService.sendCustomEmail(emp.getEmail(), subject, message);
+                }
+            }
+            
             return resp;
         });
     }
