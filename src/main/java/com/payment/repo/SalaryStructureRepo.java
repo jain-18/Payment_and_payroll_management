@@ -14,16 +14,22 @@ import com.payment.entities.SalaryStructure;
 @Repository
 public interface SalaryStructureRepo extends JpaRepository<SalaryStructure, Long> {
 
-    List<SalaryStructure> findAllByOrganizationOrganizationId(Long organizationId);
+        List<SalaryStructure> findAllByOrganizationOrganizationId(Long organizationId);
 
-    Optional<SalaryStructure> findByEmployee_EmployeeIdAndPeriodMonthAndPeriodYear(Long employeeId, Integer month,
-            Integer year);
+        Optional<SalaryStructure> findByEmployee_EmployeeIdAndPeriodMonthAndPeriodYear(Long employeeId, Integer month,
+                        Integer year);
 
-    List<SalaryStructure> findByRequest(Request request);
+        List<SalaryStructure> findByRequest(Request request);
 
-    Page<SalaryStructure> findByOrganizationOrganizationId(Long orgId, Pageable pageable);
+        Page<SalaryStructure> findByOrganizationOrganizationId(Long orgId, Pageable pageable);
 
-    Page<SalaryStructure> findByOrganizationOrganizationIdAndStatusIgnoreCase(Long orgId, String status,
-            Pageable pageable);
+        Page<SalaryStructure> findByOrganizationOrganizationIdAndStatusIgnoreCase(Long orgId, String status,
+                        Pageable pageable);
+
+        Optional<SalaryStructure> findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(
+                        Long organizationId,
+                        Long employeeId,
+                        Integer periodMonth,
+                        Integer periodYear);
 
 }

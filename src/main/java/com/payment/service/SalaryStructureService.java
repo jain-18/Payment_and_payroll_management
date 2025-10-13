@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import com.payment.dto.SalaryRequestOfMonth;
+import com.payment.dto.SalarySlip;
 import com.payment.dto.SalaryStructureRequest;
 import com.payment.dto.SalaryStructureResponse;
 
@@ -18,4 +19,6 @@ public interface SalaryStructureService {
     void sendRequestUpdateToAdmin(Long orgId);
 
     Page<SalaryRequestOfMonth> getAllSalarySlip(Long orgId,String status, PageRequest pageable);
+
+    SalarySlip getSalarySlip(Long orgId, Long empId, String month, String year);
 }

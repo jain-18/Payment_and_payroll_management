@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.payment.dto.SalaryRequestOfMonth;
+import com.payment.dto.SalarySlip;
 import com.payment.dto.SalaryStructureRequest;
 import com.payment.dto.SalaryStructureResponse;
 import com.payment.entities.Employee;
@@ -277,6 +278,54 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
             res.setPeriodYear(slip.getPeriodYear());
             return res;
         });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public SalarySlip getSalarySlip(Long orgId, Long empId, String month, String year) {
+        // 1️⃣ Validate organization
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization found with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        // 2️⃣ Parse month & year
+        int periodMonth;
+        int periodYear;
+        try {
+            periodMonth = Integer.parseInt(month);
+            periodYear = Integer.parseInt(year);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Month and Year must be numeric values");
+        }
+
+        // 3️⃣ Find salary structure for employee in the given period
+        SalaryStructure structure = salaryStructureRepository
+                .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(
+                        orgId, empId, periodMonth, periodYear)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No salary structure found for employee " + empId + " for " + month + "/" + year));
+
+        SalaryComponent component = structure.getSalaryComponent();
+        Employee employee = structure.getEmployee();
+
+        // 4️⃣ Build response DTO
+        SalarySlip slip = new SalarySlip();
+        slip.setSlipId(structure.getSlipId());
+        slip.setEmployeeName(employee.getEmployeeName());
+        slip.setOrganizationName(organization.getOrganizationName());
+        slip.setBasicSalary(component.getBasicSalary());
+        slip.setHra(component.getHra());
+        slip.setDa(component.getDa());
+        slip.setPf(component.getPf());
+        slip.setOtherAllowances(component.getOtherAllowances());
+        slip.setNetSalary(component.getNetSalary());
+        slip.setPeriodMonth(structure.getPeriodMonth());
+        slip.setPeriodYear(structure.getPeriodYear());
+
+        return slip;
     }
 
 }

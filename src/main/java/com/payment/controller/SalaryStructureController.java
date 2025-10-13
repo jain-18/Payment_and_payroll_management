@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.payment.dto.SalaryRequestOfMonth;
+import com.payment.dto.SalarySlip;
 import com.payment.dto.SalaryStructureRequest;
 import com.payment.dto.SalaryStructureResponse;
 import com.payment.service.SalaryStructureService;
@@ -74,6 +75,16 @@ public class SalaryStructureController {
         Long orgId = 1L;
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
         Page<SalaryRequestOfMonth> resp=  salaryStructureService.getAllSalarySlip(orgId,status,pageable);
+        return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/salary-slip-of-emp")
+    public ResponseEntity<SalarySlip> getSalarySlipOfEmployee(HttpServletRequest httpServletRequest,
+        @RequestParam String month,
+        @RequestParam String year){
+        Long orgId = 1L;
+        Long empId = 2L;
+        SalarySlip resp = salaryStructureService.getSalarySlip(orgId,empId,month,year);
         return ResponseEntity.ok(resp);
     }
 
