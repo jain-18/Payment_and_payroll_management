@@ -45,6 +45,9 @@ public class EmployeeController {
         // code for fetching orgId from jwt
         String token = jwtTokenProvider.getTokenFromRequest(request);
     	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+    	System.out.println(orgId);
+    	System.out.println(dto.getEmployeeName());
+    	System.out.println(dto.getEmail());
         return new ResponseEntity<>(employeeService.createEmployee(dto, orgId), HttpStatus.CREATED);
     }
 
