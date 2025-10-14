@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +20,7 @@ import com.payment.dto.SalaryRequestOfMonth;
 import com.payment.dto.SalarySlip;
 import com.payment.dto.SalaryStructureRequest;
 import com.payment.dto.SalaryStructureResponse;
+import com.payment.security.JwtTokenProvider;
 import com.payment.service.SalaryStructureService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,41 +32,52 @@ public class SalaryStructureController {
 
     @Autowired
     private SalaryStructureService salaryStructureService;
+    
+    @Autowired private JwtTokenProvider jwtTokenProvider;
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PostMapping
     public ResponseEntity<SalaryStructureResponse> create(@RequestBody SalaryStructureRequest request,
             HttpServletRequest httpServletRequest) {
         // code for getting orgId from httpservletReq
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         SalaryStructureResponse response = salaryStructureService.createSalaryStructure(request, orgId);
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PutMapping("/{slipId}")
     public ResponseEntity<SalaryStructureResponse> update(@PathVariable Long slipId,
             HttpServletRequest httpServletRequest) {
         // code for getting orgId from httpservletReq
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         SalaryStructureResponse response = salaryStructureService.updateSalaryStructure(slipId, orgId);
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PostMapping("/sendRequest")
     public ResponseEntity<Void> salaryRequest(HttpServletRequest request) {
         // get organization id from jwt
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         salaryStructureService.sendRequestToAdmin(orgId);
         return null;
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PostMapping("/sendSalaryUpdatedRequest")
     public ResponseEntity<Void> salaryUpdateRequest(HttpServletRequest request) {
         // get organization id from jwt
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         salaryStructureService.sendRequestUpdateToAdmin(orgId);
         return null;
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/allsalarySlip")
     public ResponseEntity<Page<SalaryRequestOfMonth>> getAllSalarySlip(HttpServletRequest request,
             @RequestParam(required = false) String status,
@@ -72,18 +85,21 @@ public class SalaryStructureController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy) {
         // get organization id from jwt
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
         Page<SalaryRequestOfMonth> resp=  salaryStructureService.getAllSalarySlip(orgId,status,pageable);
         return ResponseEntity.ok(resp);
     }
 
+    @PreAuthorize("hasRole('EMPLOYEE')")
     @GetMapping("/salary-slip-of-emp")
     public ResponseEntity<SalarySlip> getSalarySlipOfEmployee(HttpServletRequest httpServletRequest,
         @RequestParam String month,
         @RequestParam String year){
-        Long orgId = 1L;
-        Long empId = 2L;
+    	String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+    	Long empId = jwtTokenProvider.extractEmployeeId(token);
         SalarySlip resp = salaryStructureService.getSalarySlip(orgId,empId,month,year);
         return ResponseEntity.ok(resp);
     }

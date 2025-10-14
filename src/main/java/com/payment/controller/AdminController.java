@@ -5,19 +5,20 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import com.payment.dto.VendorRequestRes;
-import com.payment.dto.RequestReasonDto;
-import com.payment.dto.RequestResp;
-import com.payment.dto.SalaryRequestRes;
-import com.payment.service.AdminService;
-import com.payment.service.VendorService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.payment.dto.RequestReasonDto;
+import com.payment.dto.RequestResp;
+import com.payment.dto.SalaryRequestRes;
+import com.payment.dto.VendorRequestRes;
+import com.payment.service.AdminService;
+import com.payment.service.VendorService;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -28,6 +29,7 @@ public class AdminController {
     @Autowired
     AdminService adminService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/vendor-requests")
     public ResponseEntity<Page<VendorRequestRes>> getAllVendorRequestsByStatus(
             @RequestParam(defaultValue = "PENDING") String status,
@@ -48,6 +50,7 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/salary-requests")
     public ResponseEntity<Page<SalaryRequestRes>> getAllSalaryRequestsByStatus(
             @RequestParam(defaultValue = "PENDING") String status,
@@ -65,30 +68,35 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/singleRequest")
     public ResponseEntity<RequestResp> getAllPendingVendor(@RequestParam Long requestId) {
         RequestResp requestResp = adminService.getSingleRequest(requestId);
         return ResponseEntity.ok(requestResp);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/vendorRequestApproved")
     public ResponseEntity<RequestResp> requestApproved(@RequestParam Long requestId) {
         RequestResp requestResp = adminService.vendorRequestApproved(requestId);
         return ResponseEntity.ok(requestResp);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/vendorRequestRejected")
     public ResponseEntity<RequestResp> requestApproved(@RequestBody RequestReasonDto dto) {
         RequestResp requestResp = adminService.vendorRequestReject(dto);
         return ResponseEntity.ok(requestResp);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/salaryRequestApproved")
     public ResponseEntity<RequestResp> salaryRequestApproved(@RequestParam Long requestId) {
         RequestResp requestResp = adminService.approveSalaryRequest(requestId);
         return ResponseEntity.ok(requestResp);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/salaryRequestReject")
     public ResponseEntity<RequestResp> salaryRequestReject(@RequestBody RequestReasonDto dto) {
         RequestResp requestResp = adminService.rejectSalaryRequest(dto);

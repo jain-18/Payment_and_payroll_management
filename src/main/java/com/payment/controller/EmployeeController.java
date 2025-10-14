@@ -51,14 +51,17 @@ public class EmployeeController {
         return new ResponseEntity<>(employeeService.createEmployee(dto, orgId), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/{id}")
     public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Long id,
             HttpServletRequest httpServletRequest) {
         // code for fetching orgId from jwt
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return ResponseEntity.ok(employeeService.getEmployeeById(id, orgId));
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping
     public ResponseEntity<Page<EmployeeResponse>> getAllEmployees(
             @RequestParam(defaultValue = "0") int page,
@@ -67,44 +70,53 @@ public class EmployeeController {
             HttpServletRequest httpServletRequest) {
 
         // code for fetching orgId from jwt
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
         Page<EmployeeResponse> response = employeeService.getAllEmployees(pageable, orgId);
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PutMapping("/{id}")
     public ResponseEntity<EmployeeResponse> updateEmployee(@PathVariable Long id,
             @Valid @RequestBody EmployeeUpdateRequest dto, HttpServletRequest httpServletRequest) {
         // code for fetching orgId from jwt
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return ResponseEntity.ok(employeeService.updateEmployee(id, dto, orgId));
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEmployee(@PathVariable Long id, HttpServletRequest httpServletRequest) {
         // code for fetching orgId from jwt
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         employeeService.deleteEmployee(id, orgId);
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('EMPLOYEE')")
     @PostMapping("/raise-concerns")
-    public ResponseEntity<Void> raiseConcerns(@RequestParam Long slipId){
-        Long empId= 2L;
-        Long orgId = 1L;
+    public ResponseEntity<Void> raiseConcerns(@RequestParam Long slipId, HttpServletRequest request){
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+    	Long empId = jwtTokenProvider.extractEmployeeId(token);
         employeeService.raiseConcerns(slipId,empId,orgId);
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/raised-concerns")
     public ResponseEntity<Page<RaiseConcernedResp>> getAllConcerns(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "raiseAt") String sortBy
+            @RequestParam(defaultValue = "raiseAt") String sortBy, HttpServletRequest request
     ){
-        Long empId= 2L;
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+    	Long empId = jwtTokenProvider.extractEmployeeId(token);
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
         Page<RaiseConcernedResp> response = employeeService.getAllRaisedConcerns(pageable, orgId,empId);
         return ResponseEntity.ok(response);
