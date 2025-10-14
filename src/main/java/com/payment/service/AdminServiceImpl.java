@@ -42,6 +42,9 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private SalaryStructureRepo salaryStructureRepo;
+    
+    @Autowired
+    private EmailService emailService;
 
     @Override
     public Page<VendorRequestRes> getALLVendorRequestByStatus(PageRequest pageable, String status, String requestType) {
@@ -156,6 +159,26 @@ public class AdminServiceImpl implements AdminService {
         }
         account.setBalance(newBalance);
         accountRepo.save(account);
+        
+     // Send email to Organization
+        String orgEmail = org.getOrganizationEmail();
+        if (orgEmail != null && !orgEmail.isBlank()) {
+            String subject = "Vendor Payment Approved";
+            String body = "Dear " + org.getOrganizationName() + ",\n\n"
+                    + "The vendor payment request (ID: " + request.getRequestId() + ") has been approved.\n"
+                    + "Amount: " + request.getTotalAmount() + "\n\nRegards,\nPaymentApp Team";
+            emailService.sendCustomEmail(orgEmail, subject, body);
+        }
+
+        // Send email to Vendor
+        if (vendorPayment.getVendor() != null && vendorPayment.getVendor().getEmail() != null) {
+            String vendorEmail = vendorPayment.getVendor().getEmail();
+            String subject = "Payment Received";
+            String body = "Dear " + vendorPayment.getVendor().getVendorName() + ",\n\n"
+                    + "The payment request (ID: " + request.getRequestId() + ") by " + org.getOrganizationName() + "has been approved and paid.\n"
+                    + "Amount: " + request.getTotalAmount() + "\n\nRegards,\nPaymentApp Team";
+            emailService.sendCustomEmail(vendorEmail, subject, body);
+        }
 
         // 6. Prepare and return response
         RequestResp resp = new RequestResp();
@@ -199,6 +222,15 @@ public class AdminServiceImpl implements AdminService {
         vendorPayment.setStatus("REJECTED");
         vendorPaymentRepo.save(vendorPayment);
 
+        Organization org = request.getOrganization();
+        if (org != null && org.getOrganizationEmail() != null) {
+            String subject = "Vendor Payment Rejected";
+            String body = "Dear " + org.getOrganizationName() + ",\n\n"
+                    + "The vendor payment request (ID: " + request.getRequestId() + ") has been rejected.\n"
+                    + "Reason: " + request.getRejectReason() + "\n\nRegards,\nPaymentApp Team";
+            emailService.sendCustomEmail(org.getOrganizationEmail(), subject, body);
+        }
+        
         // 5. Prepare and return response
         RequestResp resp = new RequestResp();
         resp.setRequestId(updatedRequest.getRequestId());
@@ -257,18 +289,27 @@ public class AdminServiceImpl implements AdminService {
         }
         salaryStructureRepo.saveAll(structures);
 
+        String orgEmail = org.getOrganizationEmail();
+        if (orgEmail != null && !orgEmail.isBlank()) {
+            String subject = "Salary Request Approved";
+            String body = "Dear " + org.getOrganizationName() + ",\n\n"
+                    + "The salary request (ID: " + request.getRequestId() + ") has been approved.\n"
+                    + "Total Amount: " + request.getTotalAmount() + "\n\nRegards,\nPaymentApp Team";
+            emailService.sendCustomEmail(orgEmail, subject, body);
+        }
+        
         // for emailing employees
-        /*
-         * for (SalaryStructure s : structures) {
-         * Employee emp = s.getEmployee();
-         * emailService.sendSalaryCreditedEmail(
-         * emp.getEmail(),
-         * emp.getEmployeeName(),
-         * s.getPeriodMonth(),
-         * s.getPeriodYear(),
-         * s.getSalaryComponent().getNetSalary());
-         * }
-         */
+        for (SalaryStructure s : structures) {
+            Employee emp = s.getEmployee();
+            if (emp != null && emp.getEmail() != null) {
+                String subject = "Salary Credited";
+                String body = "Dear " + emp.getEmployeeName() + ",\n\n"
+                        + "Your salary for " + s.getPeriodMonth() + "/" + s.getPeriodYear() 
+                        + " has been credited.\n"
+                        + "Amount: " + s.getSalaryComponent().getNetSalary() + "\n\nRegards,\nPaymentApp Team";
+                emailService.sendCustomEmail(emp.getEmail(), subject, body);
+            }
+        }
 
         // Prepare response
         RequestResp resp = new RequestResp();
@@ -307,6 +348,15 @@ public class AdminServiceImpl implements AdminService {
         }
         salaryStructureRepo.saveAll(structures);
 
+        Organization org = request.getOrganization();
+        if (org != null && org.getOrganizationEmail() != null) {
+            String subject = "Salary Request Rejected";
+            String body = "Dear " + org.getOrganizationName() + ",\n\n"
+                    + "The salary request (ID: " + request.getRequestId() + ") has been rejected.\n"
+                    + "Reason: " + request.getRejectReason() + "\n\nRegards,\nPaymentApp Team";
+            emailService.sendCustomEmail(org.getOrganizationEmail(), subject, body);
+        }
+        
         RequestResp resp = new RequestResp();
         resp.setRequestId(request.getRequestId());
         resp.setRequestType(request.getRequestType());

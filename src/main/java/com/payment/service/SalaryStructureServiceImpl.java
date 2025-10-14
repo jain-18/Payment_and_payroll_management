@@ -26,7 +26,6 @@ import com.payment.repo.EmployeeRepo;
 import com.payment.repo.OrganizationRepo;
 import com.payment.repo.RequestRepo;
 import com.payment.repo.SalaryStructureRepo;
-import com.payment.security.SecurityUtil;
 
 @Service
 @Transactional
@@ -38,8 +37,6 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
     private EmployeeRepo employeeRepository;
     @Autowired
     private OrganizationRepo organizationRepository;
-    @Autowired
-    private SecurityUtil securityUtil;
     @Autowired
     private OrganizationRepo organizationRepo;
     @Autowired

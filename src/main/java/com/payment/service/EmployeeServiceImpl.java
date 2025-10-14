@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +55,17 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Autowired
     private RaiseConcernsRepo raiseConcernsRepo;
-
+    
+    @Autowired
+    private EmailService emailService;
+    
+    private final PasswordEncoder passwordEncoder;
+    
+    @Autowired
+	public EmployeeServiceImpl(PasswordEncoder passwordEncoder) {
+	    this.passwordEncoder = passwordEncoder;
+	}
+    
     @Override
     public EmployeeResponse createEmployee(EmployeeRequest dto, Long orgId) {
         Organization organization = organizationRepo.findById(orgId)
@@ -79,7 +90,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         user.setOrganization(organization);
         user.setEmployee(employee);
         user.setActive(true);
-        user.setPassword(employee.getEmployeeName() + employee.getEmployeeId());
+        user.setPassword(passwordEncoder.encode(employee.getEmployeeName() + employee.getEmployeeId()));
         Role role = roleRepo.findByRoleName("ROLE_EMPLOYEE");
         user.setRole(role);
         userRepo.save(user);
@@ -270,15 +281,15 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         // Fetch Employee
         Employee employee = employeeRepository.findById(empId)
-                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + empId));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + empId));
 
         // Fetch Organization
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new RuntimeException("Organization not found with id: " + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("Organization not found with id: " + orgId));
 
         // Fetch Salary Structure
         SalaryStructure salaryStructure = salaryStructureRepo.findById(slipId)
-                .orElseThrow(() -> new RuntimeException("Salary slip not found with id: " + slipId));
+                .orElseThrow(() -> new ResourceNotFoundException("Salary slip not found with id: " + slipId));
 
         salaryStructure.setStatus("CONCERNED");
         System.out.println(salaryStructure.getStatus());
@@ -293,6 +304,21 @@ public class EmployeeServiceImpl implements EmployeeService {
         concern.setSolved(false);
 
         raiseConcernsRepo.save(concern);
+        
+        if (organization.getOrganizationEmail() != null && !organization.getOrganizationEmail().isBlank()) {
+            String subject = "New Salary Concern Raised by Employee";
+            String body = "Dear " + organization.getOrganizationName() + ",\n\n"
+                    + "An employee has raised a concern regarding their salary slip.\n\n"
+                    + "Details:\n"
+                    + "Employee Name: " + employee.getEmployeeName() + "\n"
+                    + "Employee Email: " + employee.getEmail() + "\n"
+                    + "Salary Slip ID: " + slipId + "\n"
+                    + "Raised On: " + LocalDate.now() + "\n\n"
+                    + "Please review and resolve this concern promptly.\n\n"
+                    + "Regards,\nPaymentApp Team";
+
+            emailService.sendCustomEmail(organization.getOrganizationEmail(), subject, body);
+        }
     }
 
     @Override

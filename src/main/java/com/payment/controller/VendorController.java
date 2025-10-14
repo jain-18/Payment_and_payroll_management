@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.payment.dto.RequestResp;
@@ -25,11 +27,11 @@ import com.payment.dto.VendorPaymentUpdate;
 import com.payment.dto.VendorRequest;
 import com.payment.dto.VendorResponse;
 import com.payment.dto.VendorUpdateRequest;
+import com.payment.security.JwtTokenProvider;
 import com.payment.service.VendorService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/vendors")
@@ -38,70 +40,88 @@ public class VendorController {
 
     @Autowired
     VendorService vendorService;
+    
+    @Autowired JwtTokenProvider jwtTokenProvider;
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PostMapping
     public ResponseEntity<VendorResponse> createVendor(@Valid @RequestBody VendorRequest dto,
             HttpServletRequest request) {
         // Long orgId = Will you method to get id of logged in organization
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return new ResponseEntity<>(vendorService.createVendor(dto, orgId), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/{id}")
     public ResponseEntity<VendorResponse> getVendor(@PathVariable Long id, HttpServletRequest request) {
         // Long orgId = Will you method to get id of logged in organization
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return ResponseEntity.ok(vendorService.getVendorById(id, orgId));
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping
     public ResponseEntity<List<VendorResponse>> getAllVendors(HttpServletRequest request) {
         // Long orgId = Will you method to get id of logged in organization
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return ResponseEntity.ok(vendorService.getAllVendors(orgId));
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PutMapping("/{id}")
     public ResponseEntity<VendorResponse> updateVendor(@PathVariable Long id,
             @Valid @RequestBody VendorUpdateRequest dto, HttpServletRequest request) {
         // Long orgId = Will you method to get id of logged in organization
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return ResponseEntity.ok(vendorService.updateVendor(id, dto, orgId));
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVendor(@PathVariable Long id, HttpServletRequest request) {
         // Long orgId = Will you method to get id of logged in organization
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         vendorService.deleteVendor(id, orgId);
         return ResponseEntity.noContent().build();
     }
 
     // Initiate vendor payment
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PostMapping("/payments")
     public ResponseEntity<VendorPaymentResponse> initiatePayment(@Valid @RequestBody VendorPaymentRequest dto,
             HttpServletRequest request) {
         // Long orgId = Will you method to get id of logged in organization
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return new ResponseEntity<>(vendorService.initiatePayment(dto, orgId), HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/payments/paid")
     public ResponseEntity<Page<VendorPaymentResponse>> getPaymentStatusPaid(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size, HttpServletRequest request) {
 
-        Long orgId = 1L; // TODO: replace with logged-in orgId
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token); // TODO: replace with logged-in orgId
         Page<VendorPaymentResponse> payments = vendorService.getPaymentStatus(orgId, "PAID", page, size);
         return ResponseEntity.ok(payments);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/payments/notPaid")
     public ResponseEntity<Page<VendorPaymentResponse>> getPaymentStatusNotPaid(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size, HttpServletRequest request) {
 
-        Long orgId = 1L; // TODO: replace with logged-in orgId
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token); // TODO: replace with logged-in orgId
         Page<VendorPaymentResponse> payments = vendorService.getPaymentStatus(orgId, "NOT_PAID", page, size);
         return ResponseEntity.ok(payments);
     }
@@ -124,36 +144,43 @@ public class VendorController {
         return ResponseEntity.ok(payments);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PostMapping("/request")
-    public ResponseEntity<VendorPaymentResponse> paymentRequestToAdmin(@RequestParam Long vendorId) {
+    public ResponseEntity<VendorPaymentResponse> paymentRequestToAdmin(@RequestParam Long vendorId, HttpServletRequest request) {
         // Long orgId = Will you method to get id of logged in organization
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         VendorPaymentResponse response = vendorService.sentRequestToAdmin(vendorId, orgId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/vendorPaymentRejected")
     public ResponseEntity<Page<RequestResp>> getRejectTedVendorPaymentForOrg(HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "actionDate") String sortBy) {
         // Long orgId = Will you method to get id of logged in organization
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
         return ResponseEntity.ok(vendorService.getAllVendorPaymentByStatus(orgId, "REJECTED", pageable));
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/vendorPaymentApproved")
     public ResponseEntity<Page<RequestResp>> getApprovedVendorPaymentForOrg(HttpServletRequest request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "actionDate") String sortBy) {
         // Long orgId = Will you method to get id of logged in organization
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
         return ResponseEntity.ok(vendorService.getAllVendorPaymentByStatus(orgId, "APPROVED", pageable));
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/vendor-payments")
     public ResponseEntity<Page<RequestResp>> getVendorPaymentsByStatus(
             HttpServletRequest request,
@@ -163,7 +190,8 @@ public class VendorController {
             @RequestParam(defaultValue = "actionDate") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDir) {
         // 🔐 Replace with actual logged-in org ID extraction
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
 
         Sort sort = sortDir.equalsIgnoreCase("DESC")
                 ? Sort.by(sortBy).descending()
@@ -175,10 +203,12 @@ public class VendorController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PutMapping("/editRejectedVendorPayment")
-    public ResponseEntity<VendorPaymentResponse> getUpdatedResponse(@RequestBody VendorPaymentUpdate dto) {
+    public ResponseEntity<VendorPaymentResponse> getUpdatedResponse(@RequestBody VendorPaymentUpdate dto, HttpServletRequest request) {
         // Long orgId = Will you method to get id of logged in organization
-        Long orgId = 1L;
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return ResponseEntity.ok(vendorService.updatePaymentRequest(orgId, dto));
     }
 

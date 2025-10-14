@@ -5,6 +5,7 @@ import java.util.Random;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +39,16 @@ public class LoginServiceImpl implements LoginService {
 
 	@Autowired
 	private RoleRepo roleRepo;
+	
+	@Autowired
+	private EmailService emailService;
+	
+	private final PasswordEncoder passwordEncoder;
+
+	@Autowired
+	public LoginServiceImpl(PasswordEncoder passwordEncoder) {
+	    this.passwordEncoder = passwordEncoder;
+	}
 
 	private RegistrationRequest pendingRegistration;
 	private String genratedOtp;
@@ -82,11 +93,7 @@ public class LoginServiceImpl implements LoginService {
 
 		genratedOtp = String.valueOf(new Random().nextInt(999999));
 
-		/*
-		 * code of mail
-		 * 
-		 * 
-		 */
+		emailService.sendOtpEmail(request.getOrganizationEmail(), genratedOtp);
 
 		System.out.println("otp is :- " + genratedOtp);
 
@@ -143,6 +150,7 @@ public class LoginServiceImpl implements LoginService {
                 throw new IllegalStateException("Role 'ROLE_ORGANIZATION' not found in database.");
             }
 			user.setRole(role);
+			user.setPassword(passwordEncoder.encode(pendingRegistration.getPassword()));
 			userRepo.save(user);
 			
 			RegistrationResponse response = modelMapper.map(pendingRegistration, RegistrationResponse.class);
