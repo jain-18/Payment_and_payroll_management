@@ -25,6 +25,7 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Component
 public class JwtTokenProvider {
@@ -128,6 +129,13 @@ public class JwtTokenProvider {
 		return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
 	}
 
+	public String getTokenFromRequest(HttpServletRequest request) {
+	    String bearer = request.getHeader("Authorization");
+	    if (bearer != null && bearer.startsWith("Bearer ")) {
+	        return bearer.substring(7);
+	    }
+	    return null;
+	}
 	
 	// method that accepts a JWT token (as String) and returns the username that was 
 	// embedded inside it during token creation.

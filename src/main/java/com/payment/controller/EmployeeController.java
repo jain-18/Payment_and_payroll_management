@@ -36,26 +36,15 @@ public class EmployeeController {
     @Autowired
     private EmployeeService employeeService;
 
-//    @Autowired
-//    private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
 
     @PreAuthorize("hasRole('ORGANIZATION')")
     @PostMapping
     public ResponseEntity<EmployeeResponse> createEmployee(@Valid @RequestBody EmployeeRequest dto, HttpServletRequest request) {
         // code for fetching orgId from jwt
-        Long orgId = 1L;
-//    	 String authHeader = request.getHeader("Authorization");
-//    	    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-//    	        throw new IllegalStateException("Missing or invalid Authorization header");
-//    	    }
-//
-//    	    String token = authHeader.substring(7); // remove "Bearer "
-//
-//    	    // Extract organizationId from JWT
-//    	    Long orgId = jwtTokenProvider.extractOrganizationId(token);
-//    	    if (orgId == null) {
-//    	        throw new IllegalStateException("Organization ID not found in JWT token");
-//    	    }
+        String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return new ResponseEntity<>(employeeService.createEmployee(dto, orgId), HttpStatus.CREATED);
     }
 
