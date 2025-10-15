@@ -21,6 +21,12 @@ public interface OrganizationRepo extends JpaRepository<Organization, Long>{
     boolean existsByOrganizationName(String organizationName);
     boolean existsByOrganizationEmail(String organizationEmail);
     boolean existsByAccount_AccountNumber(String accountNumber);
+
+    long count();
+
+    long countByIsActiveTrue();
+
+    long countByIsActiveFalse();
     
 //    Optional<Organization> findByUsername(String username);
 }

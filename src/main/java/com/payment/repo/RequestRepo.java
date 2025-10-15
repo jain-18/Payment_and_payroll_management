@@ -26,4 +26,6 @@ public interface RequestRepo extends JpaRepository<Request, Long> {
     Page<Request> findByRequestStatusAndRequestTypeIgnoreCase(String requestStatus, String requestType,
             Pageable pageable);
 
+    Long countByRequestStatus(String string);
+
 }

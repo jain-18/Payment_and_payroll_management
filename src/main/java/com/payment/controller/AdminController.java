@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.payment.dto.AdminData;
 import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
 import com.payment.dto.SalaryRequestRes;
@@ -22,6 +24,7 @@ import com.payment.service.VendorService;
 
 @RestController
 @RequestMapping("/api/admin")
+@CrossOrigin(origins = "http://localhost:4200/")
 public class AdminController {
     @Autowired
     VendorService vendorService;
@@ -102,5 +105,12 @@ public class AdminController {
         RequestResp requestResp = adminService.rejectSalaryRequest(dto);
         return ResponseEntity.ok(requestResp);
     }
+
+    @GetMapping("/dashboard-data")
+    public ResponseEntity<AdminData> getDashboardData() {
+        AdminData adminData = adminService.getDashboardData();
+        return ResponseEntity.ok(adminData);
+    }
+    
 
 }
