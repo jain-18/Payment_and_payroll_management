@@ -251,4 +251,14 @@ public class OrganizationServiceImpl implements OrganizationService {
         raiseConcernsRepo.delete(concern);
     }
 
+    @Override
+    public Page<OrganizationResponse> getOrganizationByName(String orgainzationName, PageRequest pageable) {
+      
+        Page<Organization> organizations = organizationRepo.findByOrganizationNameContainingIgnoreCase(orgainzationName, pageable);
+        // Convert Page<Organization> → Page<OrganizationResponse>
+        Page<OrganizationResponse> response = organizations
+                .map(org -> modelMapper.map(org, OrganizationResponse.class));
+        return response;
+    }
+
 }

@@ -28,7 +28,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
-@CrossOrigin(origins = "http://localhost:4200/")
 @RestController
 @RequestMapping("/portal/organizations")
 @CrossOrigin(origins = "http://localhost:4200/")
@@ -118,6 +117,17 @@ public class OrganizationController {
     	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         organizationService.deleteConcern(concernId,orgId);
         return ResponseEntity.noContent().build();
+    }
+    
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/by-name")
+    public ResponseEntity<Page<OrganizationResponse>> getOrganizationByname(@RequestParam String organizationName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "organizationName") String sortBy) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<OrganizationResponse> response = organizationService.getOrganizationByName(organizationName, pageable);
+        return ResponseEntity.ok(response);
     }
     
 

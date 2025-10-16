@@ -29,7 +29,6 @@ import com.payment.service.EmployeeService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
-@CrossOrigin(origins = "http://localhost:4200/")
 @RestController
 @RequestMapping("/api/employees")
 @CrossOrigin(origins = "http://localhost:4200/")
