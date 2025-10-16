@@ -109,7 +109,7 @@ public class EmployeeController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('ORGANIZATION')")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     @GetMapping("/raised-concerns")
     public ResponseEntity<Page<RaiseConcernedResp>> getAllConcerns(
             @RequestParam(defaultValue = "0") int page,
