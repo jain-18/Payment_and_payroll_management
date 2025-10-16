@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.payment.dto.AdminData;
+import com.payment.dto.AllRequest;
 import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
 import com.payment.dto.SalaryRequestRes;
@@ -106,11 +107,26 @@ public class AdminController {
         return ResponseEntity.ok(requestResp);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/dashboard-data")
     public ResponseEntity<AdminData> getDashboardData() {
         AdminData adminData = adminService.getDashboardData();
         return ResponseEntity.ok(adminData);
     }
+
+    @GetMapping("/all-request")
+    public ResponseEntity<Page<AllRequest>> getAllRequest(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "requestDate") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir
+    ) {
+        Sort sort = sortDir.equalsIgnoreCase("DESC") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        PageRequest pageable = PageRequest.of(page, size, sort);
+        Page<AllRequest> allRequest = adminService.getAllRequest(pageable);
+        return ResponseEntity.ok(allRequest);
+    }
+    
     
 
 }
