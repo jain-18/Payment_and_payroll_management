@@ -22,6 +22,7 @@ import com.payment.dto.VendorRequestRes;
 import com.payment.service.AdminService;
 import com.payment.service.VendorService;
 
+@CrossOrigin(origins = "http://localhost:4200/")
 @RestController
 @RequestMapping("/api/admin")
 @CrossOrigin(origins = "http://localhost:4200/")

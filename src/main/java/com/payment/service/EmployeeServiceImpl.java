@@ -69,7 +69,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public EmployeeResponse createEmployee(EmployeeRequest dto, Long orgId) {
         Organization organization = organizationRepo.findById(orgId)
-                .orElseThrow(() -> new ResourceNotFoundException("No orgaization with id" + orgId));
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
 
         if (!organization.isActive()) {
             throw new IllegalStateException("Organization is not active for this operation");
@@ -81,19 +81,43 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new IllegalArgumentException("Account number already exists");
         }
 
+        // 1️⃣ Create and save employee
         Employee employee = mapToEntity(dto);
         employee.setActive(true);
         employee.setOrganization(organization);
         Employee saved = employeeRepository.save(employee);
+
+        // 2️⃣ Create user credentials (username & password)
+        String username = employee.getEmployeeName() + employee.getEmployeeId();
+        String rawPassword = employee.getEmployeeName() + employee.getEmployeeId(); // Default password
+        String encodedPassword = passwordEncoder.encode(rawPassword);
+
         User user = new User();
-        user.setUserName(employee.getEmployeeName() + employee.getEmployeeId());
+        user.setUserName(username);
         user.setOrganization(organization);
         user.setEmployee(employee);
         user.setActive(true);
-        user.setPassword(passwordEncoder.encode(employee.getEmployeeName() + employee.getEmployeeId()));
+        user.setPassword(encodedPassword);
+
         Role role = roleRepo.findByRoleName("ROLE_EMPLOYEE");
         user.setRole(role);
         userRepo.save(user);
+
+        // 3️⃣ Send email with credentials
+        if (employee.getEmail() != null && !employee.getEmail().isBlank()) {
+            String subject = "Welcome to " + organization.getOrganizationName() + "!";
+            String body = "Dear " + employee.getEmployeeName() + ",\n\n"
+                    + "Welcome to " + organization.getOrganizationName() + "!\n\n"
+                    + "Your employee account has been successfully created in the PaymentApp system.\n\n"
+                    + "Here are your login credentials:\n"
+                    + "Username: " + username + "\n"
+                    + "Password: " + rawPassword + "\n\n"
+                    + "Please change your password after your first login for security purposes.\n\n"
+                    + "Best regards,\n"
+                    + "PaymentApp Team";
+
+            emailService.sendCustomEmail(employee.getEmail(), subject, body);
+        }
 
         return mapToResponse(saved);
     }

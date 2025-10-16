@@ -29,6 +29,7 @@ import com.payment.service.EmployeeService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
+@CrossOrigin(origins = "http://localhost:4200/")
 @RestController
 @RequestMapping("/api/employees")
 @CrossOrigin(origins = "http://localhost:4200/")
@@ -109,7 +110,7 @@ public class EmployeeController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('ORGANIZATION')")
+    @PreAuthorize("hasRole('EMPLOYEE')")
     @GetMapping("/raised-concerns")
     public ResponseEntity<Page<RaiseConcernedResp>> getAllConcerns(
             @RequestParam(defaultValue = "0") int page,
