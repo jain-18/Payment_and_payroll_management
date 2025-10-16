@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.payment.dto.AdminData;
 import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
 import com.payment.dto.SalaryRequestRes;
@@ -21,9 +22,9 @@ import com.payment.dto.VendorRequestRes;
 import com.payment.service.AdminService;
 import com.payment.service.VendorService;
 
-@CrossOrigin(origins = "http://localhost:4200/")
 @RestController
 @RequestMapping("/api/admin")
+@CrossOrigin(origins = "http://localhost:4200/")
 public class AdminController {
     @Autowired
     VendorService vendorService;
@@ -104,5 +105,12 @@ public class AdminController {
         RequestResp requestResp = adminService.rejectSalaryRequest(dto);
         return ResponseEntity.ok(requestResp);
     }
+
+    @GetMapping("/dashboard-data")
+    public ResponseEntity<AdminData> getDashboardData() {
+        AdminData adminData = adminService.getDashboardData();
+        return ResponseEntity.ok(adminData);
+    }
+    
 
 }

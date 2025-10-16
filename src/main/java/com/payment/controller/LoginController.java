@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @CrossOrigin(origins = "http://localhost:4200/")
 @RestController
 @RequestMapping("/portal")
+@CrossOrigin(origins = "http://localhost:4200/")
 public class LoginController {
 
 	private LoginService loginService;

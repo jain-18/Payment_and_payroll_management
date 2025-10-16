@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.payment.dto.VendorRequestRes;
+import com.payment.dto.AdminData;
 import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
 import com.payment.dto.SalaryRequestRes;
@@ -22,6 +23,7 @@ import com.payment.entities.SalaryStructure;
 import com.payment.entities.VendorPayment;
 import com.payment.exception.ResourceNotFoundException;
 import com.payment.repo.AccountRepo;
+import com.payment.repo.OrganizationRepo;
 import com.payment.repo.RequestRepo;
 import com.payment.repo.SalaryStructureRepo;
 import com.payment.repo.VendorPaymentRepo;
@@ -45,6 +47,9 @@ public class AdminServiceImpl implements AdminService {
     
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private OrganizationRepo organizationRepo;
 
     @Override
     public Page<VendorRequestRes> getALLVendorRequestByStatus(PageRequest pageable, String status, String requestType) {
@@ -366,6 +371,22 @@ public class AdminServiceImpl implements AdminService {
         resp.setCreatedBy(request.getCreatedBy());
         resp.setRejectReason(request.getRejectReason());
         return resp;
+    }
+
+    @Override
+    public AdminData getDashboardData() {
+        long totalOrganizations = organizationRepo.count();
+        long totalActiveOrganizations = organizationRepo.countByIsActiveTrue();
+        long totalInActiveOrganizations = organizationRepo.countByIsActiveFalse();
+        Long totalPendingRequest = requestRepo.countByRequestStatus("PENDING");
+
+        AdminData adminData = new AdminData();
+        adminData.setTotalOrganizations(totalOrganizations);
+        adminData.setTotalActiveOrganizations(totalActiveOrganizations);
+        adminData.setTotalInActiveOrganizations(totalInActiveOrganizations);
+        adminData.setTotalPendingRequest(totalPendingRequest);
+
+        return adminData;
     }
 
 }
