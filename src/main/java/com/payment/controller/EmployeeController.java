@@ -32,7 +32,6 @@ import jakarta.validation.Valid;
 @CrossOrigin(origins = "http://localhost:4200/")
 @RestController
 @RequestMapping("/api/employees")
-@CrossOrigin(origins = "http://localhost:4200/")
 @Validated
 public class EmployeeController {
 
