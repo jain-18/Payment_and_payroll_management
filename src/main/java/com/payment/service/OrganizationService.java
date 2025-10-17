@@ -26,4 +26,6 @@ public interface OrganizationService {
     RaiseConcernedResp solvedRaiseConcern(Long concernId, Long orgId);
 
     void deleteConcern(Long concernId, Long orgId);
+
+    Page<OrganizationResponse> getOrganizationByName(String orgainzationName, PageRequest pageable);
 }

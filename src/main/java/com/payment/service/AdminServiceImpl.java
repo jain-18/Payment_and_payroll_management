@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.payment.dto.VendorRequestRes;
 import com.payment.dto.AdminData;
+import com.payment.dto.AllRequest;
 import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
 import com.payment.dto.SalaryRequestRes;
@@ -44,7 +45,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private SalaryStructureRepo salaryStructureRepo;
-    
+
     @Autowired
     private EmailService emailService;
 
@@ -164,8 +165,8 @@ public class AdminServiceImpl implements AdminService {
         }
         account.setBalance(newBalance);
         accountRepo.save(account);
-        
-     // Send email to Organization
+
+        // Send email to Organization
         String orgEmail = org.getOrganizationEmail();
         if (orgEmail != null && !orgEmail.isBlank()) {
             String subject = "Vendor Payment Approved";
@@ -180,7 +181,8 @@ public class AdminServiceImpl implements AdminService {
             String vendorEmail = vendorPayment.getVendor().getEmail();
             String subject = "Payment Received";
             String body = "Dear " + vendorPayment.getVendor().getVendorName() + ",\n\n"
-                    + "The payment request (ID: " + request.getRequestId() + ") by " + org.getOrganizationName() + "has been approved and paid.\n"
+                    + "The payment request (ID: " + request.getRequestId() + ") by " + org.getOrganizationName()
+                    + "has been approved and paid.\n"
                     + "Amount: " + request.getTotalAmount() + "\n\nRegards,\nPaymentApp Team";
             emailService.sendCustomEmail(vendorEmail, subject, body);
         }
@@ -235,7 +237,7 @@ public class AdminServiceImpl implements AdminService {
                     + "Reason: " + request.getRejectReason() + "\n\nRegards,\nPaymentApp Team";
             emailService.sendCustomEmail(org.getOrganizationEmail(), subject, body);
         }
-        
+
         // 5. Prepare and return response
         RequestResp resp = new RequestResp();
         resp.setRequestId(updatedRequest.getRequestId());
@@ -302,14 +304,14 @@ public class AdminServiceImpl implements AdminService {
                     + "Total Amount: " + request.getTotalAmount() + "\n\nRegards,\nPaymentApp Team";
             emailService.sendCustomEmail(orgEmail, subject, body);
         }
-        
+
         // for emailing employees
         for (SalaryStructure s : structures) {
             Employee emp = s.getEmployee();
             if (emp != null && emp.getEmail() != null) {
                 String subject = "Salary Credited";
                 String body = "Dear " + emp.getEmployeeName() + ",\n\n"
-                        + "Your salary for " + s.getPeriodMonth() + "/" + s.getPeriodYear() 
+                        + "Your salary for " + s.getPeriodMonth() + "/" + s.getPeriodYear()
                         + " has been credited.\n"
                         + "Amount: " + s.getSalaryComponent().getNetSalary() + "\n\nRegards,\nPaymentApp Team";
                 emailService.sendCustomEmail(emp.getEmail(), subject, body);
@@ -361,7 +363,7 @@ public class AdminServiceImpl implements AdminService {
                     + "Reason: " + request.getRejectReason() + "\n\nRegards,\nPaymentApp Team";
             emailService.sendCustomEmail(org.getOrganizationEmail(), subject, body);
         }
-        
+
         RequestResp resp = new RequestResp();
         resp.setRequestId(request.getRequestId());
         resp.setRequestType(request.getRequestType());
@@ -387,6 +389,66 @@ public class AdminServiceImpl implements AdminService {
         adminData.setTotalPendingRequest(totalPendingRequest);
 
         return adminData;
+    }
+
+    @Override
+    public Page<AllRequest> getAllRequest(PageRequest pageable) {
+
+        Page<Request> requests = requestRepo.findAll(pageable);
+        return requests.map(req -> {
+            AllRequest res = new AllRequest();
+            res.setRequestId(req.getRequestId());
+            res.setRequestStatus(req.getRequestStatus());
+            res.setRequestDate(req.getRequestDate());
+            res.setCreatedBy(req.getCreatedBy());
+            if ("VENDORPAYMENT".equalsIgnoreCase(req.getRequestType())) {
+                VendorPayment vp = vendorPaymentRepo.findByRequest(req);
+                if (vp != null && vp.getVendor() != null) {
+                    res.setTo(vp.getVendor().getVendorName());
+                }
+            } else {
+                res.setTo("N/A");
+            }
+            res.setTotalAmount(req.getTotalAmount());
+            res.setRequestType(req.getRequestType());
+            return res;
+        });
+    }
+
+    @Override
+    public Page<AllRequest> getRequestByCompanyName(String companyName, PageRequest pageable, String requestType,
+            String status) {
+        
+        if ((companyName == null || companyName.trim().isEmpty()) 
+            && (requestType == null || requestType.trim().isEmpty())
+            && (status == null || status.trim().isEmpty())) {
+            return getAllRequest(pageable);
+        }
+        System.out.println(companyName + " | " + requestType + " | " + status);
+        Page<Request> requests = requestRepo
+                .findByCreatedByLikeIgnoreCaseAndRequestTypeLikeIgnoreCaseAndRequestStatusLikeIgnoreCase(
+                        companyName != null && !companyName.trim().isEmpty() ? companyName + "%": "%",
+                        requestType != null && !requestType.trim().isEmpty() ? requestType: "%",
+                        status != null && !status.trim().isEmpty() ? status : "%",
+                        pageable);
+        return requests.map(req -> {
+            AllRequest res = new AllRequest();
+            res.setRequestId(req.getRequestId());
+            res.setRequestStatus(req.getRequestStatus());
+            res.setRequestDate(req.getRequestDate());
+            res.setCreatedBy(req.getCreatedBy());
+            if ("VENDORPAYMENT".equalsIgnoreCase(req.getRequestType())) {
+                VendorPayment vp = vendorPaymentRepo.findByRequest(req);
+                if (vp != null && vp.getVendor() != null) {
+                    res.setTo(vp.getVendor().getVendorName());
+                }
+            } else {
+                res.setTo("N/A");
+            }
+            res.setTotalAmount(req.getTotalAmount());
+            res.setRequestType(req.getRequestType());
+            return res;
+        });
     }
 
 }

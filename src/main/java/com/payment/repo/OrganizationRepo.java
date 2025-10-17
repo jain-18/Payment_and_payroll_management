@@ -3,10 +3,13 @@ package com.payment.repo;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.payment.entities.Organization;
+import java.util.List;
+
 
 
 public interface OrganizationRepo extends JpaRepository<Organization, Long>{
@@ -27,6 +30,7 @@ public interface OrganizationRepo extends JpaRepository<Organization, Long>{
     long countByIsActiveTrue();
 
     long countByIsActiveFalse();
-    
+
+    Page<Organization> findByOrganizationNameContainingIgnoreCase(String orgainzationName, PageRequest pageable);
 //    Optional<Organization> findByUsername(String username);
 }
