@@ -30,4 +30,7 @@ public interface AdminService {
     AdminData getDashboardData();
 
     Page<AllRequest> getAllRequest(PageRequest pageable);
+
+    Page<AllRequest> getRequestByCompanyName(String companyName, PageRequest pageable, String requestType,
+            String status);
 }

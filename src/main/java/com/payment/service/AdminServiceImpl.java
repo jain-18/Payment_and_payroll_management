@@ -401,6 +401,50 @@ public class AdminServiceImpl implements AdminService {
             res.setRequestStatus(req.getRequestStatus());
             res.setRequestDate(req.getRequestDate());
             res.setCreatedBy(req.getCreatedBy());
+            if ("VENDORPAYMENT".equalsIgnoreCase(req.getRequestType())) {
+                VendorPayment vp = vendorPaymentRepo.findByRequest(req);
+                if (vp != null && vp.getVendor() != null) {
+                    res.setTo(vp.getVendor().getVendorName());
+                }
+            } else {
+                res.setTo("N/A");
+            }
+            res.setTotalAmount(req.getTotalAmount());
+            res.setRequestType(req.getRequestType());
+            return res;
+        });
+    }
+
+    @Override
+    public Page<AllRequest> getRequestByCompanyName(String companyName, PageRequest pageable, String requestType,
+            String status) {
+        
+        if ((companyName == null || companyName.trim().isEmpty()) 
+            && (requestType == null || requestType.trim().isEmpty())
+            && (status == null || status.trim().isEmpty())) {
+            return getAllRequest(pageable);
+        }
+        System.out.println(companyName + " | " + requestType + " | " + status);
+        Page<Request> requests = requestRepo
+                .findByCreatedByLikeIgnoreCaseAndRequestTypeLikeIgnoreCaseAndRequestStatusLikeIgnoreCase(
+                        companyName != null && !companyName.trim().isEmpty() ? companyName + "%": "%",
+                        requestType != null && !requestType.trim().isEmpty() ? requestType: "%",
+                        status != null && !status.trim().isEmpty() ? status : "%",
+                        pageable);
+        return requests.map(req -> {
+            AllRequest res = new AllRequest();
+            res.setRequestId(req.getRequestId());
+            res.setRequestStatus(req.getRequestStatus());
+            res.setRequestDate(req.getRequestDate());
+            res.setCreatedBy(req.getCreatedBy());
+            if ("VENDORPAYMENT".equalsIgnoreCase(req.getRequestType())) {
+                VendorPayment vp = vendorPaymentRepo.findByRequest(req);
+                if (vp != null && vp.getVendor() != null) {
+                    res.setTo(vp.getVendor().getVendorName());
+                }
+            } else {
+                res.setTo("N/A");
+            }
             res.setTotalAmount(req.getTotalAmount());
             res.setRequestType(req.getRequestType());
             return res;
