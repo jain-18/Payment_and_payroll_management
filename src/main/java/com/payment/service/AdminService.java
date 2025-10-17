@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
 import com.payment.dto.AdminData;
+import com.payment.dto.AllRequest;
 import com.payment.dto.RequestReasonDto;
 import com.payment.dto.RequestResp;
 import com.payment.dto.SalaryRequestRes;
@@ -27,4 +28,9 @@ public interface AdminService {
     Page<SalaryRequestRes> getALLSalaryRequestByStatus(PageRequest pageable, String status, String requestType);
 
     AdminData getDashboardData();
+
+    Page<AllRequest> getAllRequest(PageRequest pageable);
+
+    Page<AllRequest> getRequestByCompanyName(String companyName, PageRequest pageable, String requestType,
+            String status);
 }

@@ -19,7 +19,6 @@ import com.payment.service.LoginService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@CrossOrigin(origins = "http://localhost:4200/")
 @RestController
 @RequestMapping("/portal")
 public class LoginController {
