@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,14 +64,19 @@ public class VendorController {
     	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return ResponseEntity.ok(vendorService.getVendorById(id, orgId));
     }
-
+    
     @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping
-    public ResponseEntity<List<VendorResponse>> getAllVendors(HttpServletRequest request) {
-        // Long orgId = Will you method to get id of logged in organization
+    public ResponseEntity<Page<VendorResponse>> getAllVendors(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "vendorId") String sortBy, HttpServletRequest request) {
+
     	String token = jwtTokenProvider.getTokenFromRequest(request);
     	Long orgId = jwtTokenProvider.extractOrganizationId(token);
-        return ResponseEntity.ok(vendorService.getAllVendors(orgId));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        Page<VendorResponse> vendors = vendorService.getAllVendors(pageable, orgId);
+        return ResponseEntity.ok(vendors);
     }
 
     @PreAuthorize("hasRole('ORGANIZATION')")

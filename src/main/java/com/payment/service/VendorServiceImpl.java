@@ -2,8 +2,6 @@ package com.payment.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -26,6 +24,7 @@ import com.payment.entities.Request;
 import com.payment.entities.Vendor;
 import com.payment.entities.VendorPayment;
 import com.payment.exception.ResourceNotFoundException;
+import com.payment.repo.AccountRepo;
 import com.payment.repo.OrganizationRepo;
 import com.payment.repo.RequestRepo;
 import com.payment.repo.VendorPaymentRepo;
@@ -43,6 +42,7 @@ public class VendorServiceImpl implements VendorService {
     OrganizationRepo organizationRepo;
     @Autowired
     RequestRepo requestRepo;
+    @Autowired AccountRepo accountRepo;
 
     @Override
     public VendorResponse createVendor(VendorRequest dto, Long orgId) {
@@ -109,11 +109,16 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
-    public List<VendorResponse> getAllVendors(Long orgId) {
-        return vendorRepo.findAll().stream()
-                .filter(vendor -> vendor.getOrganizations().getOrganizationId()==orgId)
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public Page<VendorResponse> getAllVendors(Pageable pageable, Long orgId) {
+        // 1. Validate organization
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        // 2. Fetch paginated vendors for that org
+        Page<Vendor> vendors = vendorRepo.findByOrganizations_OrganizationId(orgId, pageable);
+
+        // 3. Map to response DTO
+        return vendors.map(this::mapToResponse);
     }
 
     @Override

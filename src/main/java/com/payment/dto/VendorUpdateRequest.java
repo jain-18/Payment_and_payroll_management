@@ -17,7 +17,7 @@ public class VendorUpdateRequest {
     @Pattern(regexp = "^[6-9]\\d{9}$", message = "Phone number must be a valid 10-digit Indian mobile number")
     private String phoneNumber;
     
-    @Pattern(regexp = "^[0-9]{10,20}$", message = "Account number must be 10-20 digits")
+    @Pattern(regexp = "^[0-9]{9,18}$", message = "Account number must be 9-18 digits")
     private String accountNumber;
 
     private String ifsc;

@@ -19,7 +19,7 @@ public interface VendorService {
 
     VendorResponse getVendorById(Long id,Long Id);
 
-    List<VendorResponse> getAllVendors(Long id);
+    Page<VendorResponse> getAllVendors(Pageable pageable, Long orgId);
 
     VendorResponse updateVendor(Long id, VendorUpdateRequest dto,Long orgId);
 
