@@ -54,6 +54,15 @@ public class OrganizationController {
         OrgInfoResponse org = organizationService.getOrganization(id);
         return ResponseEntity.ok(org);
     }
+    
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/me")
+    public ResponseEntity<OrgInfoResponse> getOrganizationById(HttpServletRequest request) {
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+    	OrgInfoResponse org = organizationService.getOrganization(orgId);
+        return ResponseEntity.ok(org);
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZATION')")
     @PatchMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
