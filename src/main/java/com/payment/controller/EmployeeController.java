@@ -74,6 +74,7 @@ public class EmployeeController {
         // code for fetching orgId from jwt
     	String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);
     	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+        System.out.println("Organization Id:    "+orgId);
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
         Page<EmployeeResponse> response = employeeService.getAllEmployees(pageable, orgId);
         return ResponseEntity.ok(response);
