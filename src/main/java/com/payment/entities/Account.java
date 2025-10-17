@@ -45,5 +45,6 @@ public class Account {
 	@Min(value = 0)
 	private BigDecimal balance;
 	
-	
+	@OneToMany(mappedBy="account")
+	private List<Vendor> vendor;
 }

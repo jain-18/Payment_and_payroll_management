@@ -57,9 +57,10 @@ public class OrganizationController {
 
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZATION')")
     @PatchMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<OrgInfoResponse> updateOrganization(@Valid @ModelAttribute OrganizationUpdateRequest request,
-            @RequestParam Long id) {
-        OrgInfoResponse org = organizationService.updateOrganization(request, id);
+    public ResponseEntity<OrgInfoResponse> updateOrganization(@Valid @ModelAttribute OrganizationUpdateRequest request, HttpServletRequest servletRequest) {
+    	String token = jwtTokenProvider.getTokenFromRequest(servletRequest);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+        OrgInfoResponse org = organizationService.updateOrganization(request, orgId);
         return ResponseEntity.ok(org);
     }
 
