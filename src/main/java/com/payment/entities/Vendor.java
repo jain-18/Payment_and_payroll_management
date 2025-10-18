@@ -56,7 +56,7 @@ public class Vendor {
 	@JoinColumn(name = "organizationId")
 	private Organization organizations;
 	
-	@OneToOne(cascade = CascadeType.ALL,fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "account_id", nullable = false)
 	private Account account;
 	

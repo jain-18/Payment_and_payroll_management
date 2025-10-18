@@ -3,8 +3,8 @@ package com.payment.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +26,7 @@ import com.payment.entities.Request;
 import com.payment.entities.Vendor;
 import com.payment.entities.VendorPayment;
 import com.payment.exception.ResourceNotFoundException;
+import com.payment.repo.AccountRepo;
 import com.payment.repo.OrganizationRepo;
 import com.payment.repo.RequestRepo;
 import com.payment.repo.VendorPaymentRepo;
@@ -35,6 +36,8 @@ import com.payment.repo.VendorRepo;
 @Transactional
 public class VendorServiceImpl implements VendorService {
 
+	@Autowired ModelMapper modelMapper;
+	
     @Autowired
     VendorRepo vendorRepo;
     @Autowired
@@ -43,6 +46,7 @@ public class VendorServiceImpl implements VendorService {
     OrganizationRepo organizationRepo;
     @Autowired
     RequestRepo requestRepo;
+    @Autowired AccountRepo accountRepo;
 
     @Override
     public VendorResponse createVendor(VendorRequest dto, Long orgId) {
@@ -56,28 +60,64 @@ public class VendorServiceImpl implements VendorService {
         // if (vendorRepo.existsByPhoneNumber(dto.getPhoneNumber())) {
         //     throw new IllegalArgumentException("Phone number already exists");
         // }
-        if (vendorRepo.existsByAccount_AccountNumber(dto.getAccountNumber())) {
-            throw new IllegalArgumentException("Account number already exists");
-        }
+        
         Organization org = organizationRepo.findById(orgId)
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found with ID: " + orgId));
 
+        if (!org.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
 
+        if (vendorRepo.existsByVendorNameAndOrganizations_OrganizationId(dto.getVendorName().trim(), orgId)) {
+            throw new IllegalStateException("Vendor with name '" + dto.getVendorName() + "' already exists in this organization");
+        }
+        
+        if (vendorRepo.existsByEmailAndOrganizations_OrganizationId(dto.getEmail(), orgId)) {
+            throw new IllegalStateException("Email '" + dto.getEmail() + "' is already used in this organization");
+        }
+
+        // ✅ Check phone number uniqueness per organization
+        if (vendorRepo.existsByPhoneNumberAndOrganizations_OrganizationId(dto.getPhoneNumber(), orgId)) {
+            throw new IllegalStateException("Phone number '" + dto.getPhoneNumber() + "' is already used in this organization");
+        }
+        
         Vendor vendor = new Vendor();
-        vendor.setVendorName(dto.getVendorName());
+        vendor.setVendorName(dto.getVendorName().trim());
         vendor.setEmail(dto.getEmail());
         vendor.setPhoneNumber(dto.getPhoneNumber());
         vendor.setActive(true);
         vendor.setOrganizations(org);
 
-        Account account = new Account();
-        account.setAccountNumber(dto.getAccountNumber());
-        account.setIfsc(dto.getIfsc());
-        account.setAccountType("SAVINGS");
-        account.setBalance(BigDecimal.ZERO);
+        Account newAccount;
+        if (vendorRepo.existsByAccount_AccountNumber(dto.getAccountNumber())) {
+            // Fetch the existing account
+            newAccount = accountRepo.findByAccountNumber(dto.getAccountNumber())
+                    .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
 
-        vendor.setAccount(account);
+            // Get all vendors linked to that account
+            List<Vendor> vendors = vendorRepo.findByAccount(newAccount);
 
+            // Check if any vendor linked to this account has a *different* name
+            boolean usedByDifferentVendor = vendors.stream()
+                    .anyMatch(v -> !v.getVendorName().equalsIgnoreCase(dto.getVendorName()));
+
+            if (usedByDifferentVendor) {
+                throw new IllegalStateException("This Account is already being used by another vendor");
+            }
+
+            // Otherwise, it's safe to reuse the same account
+            vendor.setAccount(newAccount);
+        } else {
+            // Create a new account if it doesn't exist
+            Account account = new Account();
+            account.setAccountNumber(dto.getAccountNumber());
+            account.setIfsc(dto.getIfsc());
+            account.setAccountType("SAVINGS");
+            account.setBalance(BigDecimal.ZERO);
+            newAccount = accountRepo.save(account);
+            vendor.setAccount(newAccount);
+        }
+        
         AddressCreateRequest adr = dto.getAddress();
         com.payment.entities.Address address = new com.payment.entities.Address();
         address.setCity(adr.getCity());
@@ -96,6 +136,14 @@ public class VendorServiceImpl implements VendorService {
 
     @Override
     public VendorResponse getVendorById(Long id, Long orgId) {
+    	
+    	Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+    	
         Vendor vendor = vendorRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with ID: " + id));
 
@@ -109,11 +157,20 @@ public class VendorServiceImpl implements VendorService {
     }
 
     @Override
-    public List<VendorResponse> getAllVendors(Long orgId) {
-        return vendorRepo.findAll().stream()
-                .filter(vendor -> vendor.getOrganizations().getOrganizationId()==orgId)
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public Page<VendorResponse> getAllVendors(Pageable pageable, Long orgId) {
+        // 1. Validate organization
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+        
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        // 2. Fetch paginated vendors for that org
+        Page<Vendor> vendors = vendorRepo.findByOrganizations_OrganizationId(orgId, pageable);
+
+        // 3. Map to response DTO
+        return vendors.map(this::mapToResponse);
     }
 
     @Override
@@ -121,52 +178,97 @@ public class VendorServiceImpl implements VendorService {
         Vendor vendor = vendorRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with ID: " + id));
 
-        // Check if this vendor belongs to the given organization
-        Organization currentOrg = organizationRepo.findById(orgId)
+        Organization org = organizationRepo.findById(orgId)
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found with ID: " + orgId));
 
-        if (!vendor.getOrganizations().equals(currentOrg)) {
+        if (!org.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        // ✅ safer organization ownership check
+        if (!vendor.getOrganizations().getOrganizationId().equals(orgId)) {
             throw new IllegalStateException("Vendor does not belong to this organization");
         }
 
-        // Vendor name
-        if (dto.getVendorName() != null && !dto.getVendorName().equals(vendor.getVendorName())) {
-            // if (vendorRepo.existsByVendorName(dto.getVendorName())) {
-            //     throw new IllegalArgumentException("Vendor name already exists");
-            // }
-            vendor.setVendorName(dto.getVendorName());
-        }
+        // ✅ Vendor name update check (unique per organization)
+        if (dto.getVendorName() != null &&
+            !dto.getVendorName().trim().equalsIgnoreCase(vendor.getVendorName())) {
 
-        // Email
-        if (dto.getEmail() != null && !dto.getEmail().equals(vendor.getEmail())) {
-            // if (vendorRepo.existsByEmail(dto.getEmail())) {
-            //     throw new IllegalArgumentException("Email already exists");
-            // }
-            vendor.setEmail(dto.getEmail());
-        }
+            boolean nameExists = vendorRepo.existsByVendorNameAndOrganizations_OrganizationId(
+                    dto.getVendorName().trim(), orgId);
 
-        // Phone
-        if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().equals(vendor.getPhoneNumber())) {
-            // if (vendorRepo.existsByPhoneNumber(dto.getPhoneNumber())) {
-            //     throw new IllegalArgumentException("Phone number already exists");
-            // }
-            vendor.setPhoneNumber(dto.getPhoneNumber());
-        }
-
-        // Account number & IFSC
-        if (dto.getAccountNumber() != null &&
-                !dto.getAccountNumber().equals(vendor.getAccount().getAccountNumber())) {
-            if (vendorRepo.existsByAccount_AccountNumber(dto.getAccountNumber())) {
-                throw new IllegalArgumentException("Account number already exists");
+            if (nameExists) {
+                throw new IllegalStateException(
+                    "Vendor name '" + dto.getVendorName() + "' already exists in this organization");
             }
-            vendor.getAccount().setAccountNumber(dto.getAccountNumber());
+
+            vendor.setVendorName(dto.getVendorName().trim());
         }
+
+        // ✅ Email
+        if (dto.getEmail() != null &&
+                !dto.getEmail().equalsIgnoreCase(vendor.getEmail())) {
+
+                boolean emailExists = vendorRepo.existsByEmailAndOrganizations_OrganizationId(
+                        dto.getEmail(), orgId);
+                if (emailExists) {
+                    throw new IllegalStateException(
+                        "Email '" + dto.getEmail() + "' is already used in this organization");
+                }
+                vendor.setEmail(dto.getEmail());
+            }
+
+        // ✅ Phone number
+        if (dto.getPhoneNumber() != null &&
+                !dto.getPhoneNumber().equals(vendor.getPhoneNumber())) {
+
+                boolean phoneExists = vendorRepo.existsByPhoneNumberAndOrganizations_OrganizationId(
+                        dto.getPhoneNumber(), orgId);
+                if (phoneExists) {
+                    throw new IllegalStateException(
+                        "Phone number '" + dto.getPhoneNumber() + "' is already used in this organization");
+                }
+                vendor.setPhoneNumber(dto.getPhoneNumber());
+            }
+
+        // ✅ Account update
+        if (dto.getAccountNumber() != null &&
+        	    !dto.getAccountNumber().equals(vendor.getAccount().getAccountNumber())) {
+
+        	    if (vendorRepo.existsByAccount_AccountNumber(dto.getAccountNumber())) {
+
+        	        Account existingAccount = accountRepo.findByAccountNumber(dto.getAccountNumber())
+        	                .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+
+        	        List<Vendor> vendors = vendorRepo.findByAccount(existingAccount);
+
+        	        boolean usedByDifferentVendor = vendors.stream()
+        	                .anyMatch(v -> !v.getVendorName().equalsIgnoreCase(dto.getVendorName()));
+
+        	        if (usedByDifferentVendor) {
+        	            throw new IllegalStateException("This Account is already being used by another vendor");
+        	        }
+
+        	        // Safe to reuse same account (same vendor name)
+        	        vendor.setAccount(existingAccount);
+
+        	    } else {
+        	        // New account — create and assign
+        	        Account newAccount = new Account();
+        	        newAccount.setAccountNumber(dto.getAccountNumber());
+        	        newAccount.setIfsc(dto.getIfsc());
+        	        newAccount.setAccountType("SAVINGS");
+        	        newAccount.setBalance(BigDecimal.ZERO);
+        	        newAccount = accountRepo.save(newAccount);
+        	        vendor.setAccount(newAccount);
+        	    }
+        	}
 
         if (dto.getIfsc() != null) {
             vendor.getAccount().setIfsc(dto.getIfsc());
         }
 
-        // Address
+        // ✅ Address update
         if (dto.getAddress() != null) {
             AddressCreateRequest adr = dto.getAddress();
             vendor.getAddress().setCity(adr.getCity());
@@ -180,34 +282,57 @@ public class VendorServiceImpl implements VendorService {
 
     @Override
     public void deleteVendor(Long vendorId, Long orgId) {
+
+        // 1. Fetch vendor and organization
         Vendor vendor = vendorRepo.findById(vendorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor not found with ID: " + vendorId));
 
         Organization organization = organizationRepo.findById(orgId)
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found with ID: " + orgId));
 
-        // Check if the vendor is associated with this organization
-        if (!vendor.getOrganizations().equals(organization)) {
+        // 2. Validate organization state
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        // 3. Ensure vendor belongs to this organization
+        if (!vendor.getOrganizations().getOrganizationId().equals(orgId)) {
             throw new IllegalStateException("Vendor does not belong to this organization");
         }
 
-        // Remove the association between vendor and this specific organization
-        // vendor.getOrganizations().remove(organization);
-        organization.getVendors().remove(vendor);
-
-        // If vendor is no longer associated with any organization, you can decide to
-        // delete it
-        VendorPayment vp = vendorPaymentRepo.findByVendor(vendor).orElse(null);
-        if(vp != null){
+        // 4. Prevent deletion if vendor has any payment records
+        boolean hasPayments = vendorPaymentRepo.existsByVendor(vendor);
+        if (hasPayments) {
             throw new IllegalStateException("Vendor has existing transactions; cannot delete");
         }
+
+        // 5. Handle account reference cleanup
+        Account account = vendor.getAccount();
+        List<Vendor> vendorsUsingSameAccount = vendorRepo.findByAccount(account);
+
+        // Remove vendor from organization’s vendor list
+        organization.getVendors().remove(vendor);
+
+        // Delete the vendor
         vendorRepo.delete(vendor);
+
+        // Delete account only if this vendor was the only one using it
+        if (vendorsUsingSameAccount.size() == 1) {
+            accountRepo.delete(account);
+        }
     }
 
     @Override
     public VendorPaymentResponse initiatePayment(VendorPaymentRequest request, Long orgId) {
         Vendor vendor = vendorRepo.findById(request.getVendorId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor not found"));
+        
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
 
         boolean isRegistered = vendor.getOrganizations().getOrganizationId() == orgId;
 
@@ -256,7 +381,15 @@ public class VendorServiceImpl implements VendorService {
 
     @Override
     public Page<VendorPaymentResponse> getPaymentStatus(Long orgId, String status, int page, int size) {
-        PageRequest pageable = PageRequest.of(page, size);
+        
+    	Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+    	
+    	PageRequest pageable = PageRequest.of(page, size);
         Page<VendorPayment> payments = vendorPaymentRepo
                 .findByVendor_Organizations_OrganizationIdAndStatus(orgId, status, pageable);
 
@@ -293,6 +426,10 @@ public class VendorServiceImpl implements VendorService {
         Organization organization = organizationRepo.findById(orgId)
                 .orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
 
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+        
         // 2. Fetch the payment
         VendorPayment vp = vendorPaymentRepo.findById(vendorPaymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment Request not found"));
@@ -341,7 +478,15 @@ public class VendorServiceImpl implements VendorService {
 
     @Override
     public Page<RequestResp> getAllVendorPaymentByStatus(Long orgId, String status, Pageable pageable) {
-        Page<Request> requests = requestRepo.findByOrganization_OrganizationIdAndRequestStatus(
+        
+    	Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+    	
+    	Page<Request> requests = requestRepo.findByOrganization_OrganizationIdAndRequestStatus(
                 orgId, status, pageable);
 
         return requests.map(req -> {
@@ -368,6 +513,13 @@ public class VendorServiceImpl implements VendorService {
         // 1. Fetch VendorPayment
         VendorPayment vendorPayment = vendorPaymentRepo.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Vendor payment not found"));
+        
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
 
         // 2. Ensure that the vendor payment belongs to the organization
         Vendor vendor = vendorPayment.getVendor();
@@ -405,6 +557,15 @@ public class VendorServiceImpl implements VendorService {
         response.setVendorId(updated.getVendor().getVendorId());
         response.setVendorName(updated.getVendor().getVendorName());
 
+        return response;
+    }
+    
+    @Override
+    public Page<VendorResponse> getVendorByName(String vendorName, PageRequest pageable) {
+      
+        Page<Vendor> vendors = vendorRepo.findByVendorNameContainingIgnoreCase(vendorName, pageable);
+        Page<VendorResponse> response = vendors
+                .map(ven -> modelMapper.map(ven, VendorResponse.class));
         return response;
     }
 

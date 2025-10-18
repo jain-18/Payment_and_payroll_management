@@ -24,4 +24,6 @@ public interface VendorPaymentRepo extends JpaRepository<VendorPayment, Long> {
     VendorPayment findByRequest(Request req);
 
     Optional<VendorPayment> findByVendor(Vendor vendor);
+    
+    boolean existsByVendor(Vendor vendor);
 }

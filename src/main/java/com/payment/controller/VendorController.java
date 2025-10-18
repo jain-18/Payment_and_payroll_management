@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.payment.dto.OrganizationResponse;
 import com.payment.dto.RequestResp;
 import com.payment.dto.VendorPaymentRequest;
 import com.payment.dto.VendorPaymentResponse;
@@ -63,14 +65,30 @@ public class VendorController {
     	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return ResponseEntity.ok(vendorService.getVendorById(id, orgId));
     }
-
+    
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/by-name")
+    public ResponseEntity<Page<VendorResponse>> getVendorByname(@RequestParam String vendorName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "vendorName") String sortBy) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<VendorResponse> response = vendorService.getVendorByName(vendorName, pageable);
+        return ResponseEntity.ok(response);
+    }
+    
     @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping
-    public ResponseEntity<List<VendorResponse>> getAllVendors(HttpServletRequest request) {
-        // Long orgId = Will you method to get id of logged in organization
+    public ResponseEntity<Page<VendorResponse>> getAllVendors(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "vendorId") String sortBy, HttpServletRequest request) {
+
     	String token = jwtTokenProvider.getTokenFromRequest(request);
     	Long orgId = jwtTokenProvider.extractOrganizationId(token);
-        return ResponseEntity.ok(vendorService.getAllVendors(orgId));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+        Page<VendorResponse> vendors = vendorService.getAllVendors(pageable, orgId);
+        return ResponseEntity.ok(vendors);
     }
 
     @PreAuthorize("hasRole('ORGANIZATION')")

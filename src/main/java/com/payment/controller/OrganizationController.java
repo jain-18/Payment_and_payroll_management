@@ -30,7 +30,6 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/portal/organizations")
-@CrossOrigin(origins = "http://localhost:4200/")
 public class OrganizationController {
 
     private OrganizationService organizationService;
@@ -54,12 +53,22 @@ public class OrganizationController {
         OrgInfoResponse org = organizationService.getOrganization(id);
         return ResponseEntity.ok(org);
     }
+    
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/me")
+    public ResponseEntity<OrgInfoResponse> getOrganizationById(HttpServletRequest request) {
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+    	OrgInfoResponse org = organizationService.getOrganization(orgId);
+        return ResponseEntity.ok(org);
+    }
 
     @PreAuthorize("hasAnyRole('ADMIN', 'ORGANIZATION')")
     @PatchMapping(value = "", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<OrgInfoResponse> updateOrganization(@Valid @ModelAttribute OrganizationUpdateRequest request,
-            @RequestParam Long id) {
-        OrgInfoResponse org = organizationService.updateOrganization(request, id);
+    public ResponseEntity<OrgInfoResponse> updateOrganization(@Valid @ModelAttribute OrganizationUpdateRequest request, HttpServletRequest servletRequest) {
+    	String token = jwtTokenProvider.getTokenFromRequest(servletRequest);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+        OrgInfoResponse org = organizationService.updateOrganization(request, orgId);
         return ResponseEntity.ok(org);
     }
 

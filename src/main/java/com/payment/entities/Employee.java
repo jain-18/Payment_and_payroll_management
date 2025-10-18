@@ -79,4 +79,7 @@ public class Employee {
 	
 	@OneToMany(mappedBy="employee", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<SalaryStructure> salaryStructure;
+	
+	@OneToOne(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	private User user;
 }
