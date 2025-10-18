@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.payment.dto.EmployeeDetail;
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
 import com.payment.dto.EmployeeUpdateRequest;
@@ -24,4 +25,6 @@ public interface EmployeeService {
     void raiseConcerns(Long slipId, Long empId, Long orgId);
 
     Page<RaiseConcernedResp> getAllRaisedConcerns(PageRequest pageable, Long orgId, Long empId);
+
+    EmployeeDetail getEmployeeDetail(Long empId);
 }

@@ -1,5 +1,7 @@
 package com.payment.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
@@ -20,5 +22,7 @@ public interface SalaryStructureService {
 
     Page<SalaryRequestOfMonth> getAllSalarySlip(Long orgId,String status, PageRequest pageable);
 
-    SalarySlip getSalarySlip(Long orgId, Long empId, String month, String year);
+    List<SalarySlip> getSalarySlip(Long orgId, Long empId, String month, String year);
+
+    Page<SalarySlip> getSalarySlipWithPagination(Long orgId, Long empId, String month, String year, PageRequest pageable);
 }

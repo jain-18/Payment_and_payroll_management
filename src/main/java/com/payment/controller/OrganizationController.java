@@ -30,6 +30,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/portal/organizations")
+@CrossOrigin(origins = "http://localhost:4200/")
 public class OrganizationController {
 
     private OrganizationService organizationService;

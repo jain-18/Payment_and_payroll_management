@@ -32,4 +32,19 @@ public interface SalaryStructureRepo extends JpaRepository<SalaryStructure, Long
                         Integer periodMonth,
                         Integer periodYear);
 
+        Optional<SalaryStructure> findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(
+                        Long orgId, Long empId, int month, int year);
+
+        List<SalaryStructure> findByOrganizationOrganizationIdAndEmployeeEmployeeId(
+                        Long orgId, Long empId);
+
+        Page<SalaryStructure> findByOrganizationOrganizationIdAndEmployeeEmployeeId(
+                        Long orgId, Long empId, Pageable pageable);
+
+        List<SalaryStructure> findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodYear(
+                        Long orgId, Long empId, int year);
+
+        Page<SalaryStructure> findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodYear(
+                        Long orgId, Long empId, int year, Pageable pageable);
+
 }

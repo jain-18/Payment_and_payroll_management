@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.payment.dto.EmployeeDetail;
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
 import com.payment.dto.EmployeeUpdateRequest;
@@ -32,6 +33,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/employees")
 @Validated
+@CrossOrigin(origins = "http://localhost:4200/")
 public class EmployeeController {
 
     @Autowired
@@ -123,5 +125,15 @@ public class EmployeeController {
         Page<RaiseConcernedResp> response = employeeService.getAllRaisedConcerns(pageable, orgId,empId);
         return ResponseEntity.ok(response);
     }
+
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    @GetMapping("/get-employee-detail")
+    public ResponseEntity<EmployeeDetail> getMethodName(HttpServletRequest request) {
+        String token = jwtTokenProvider.getTokenFromRequest(request);
+        Long empId = jwtTokenProvider.extractEmployeeId(token);
+        EmployeeDetail employeeDetail = employeeService.getEmployeeDetail(empId);
+        return ResponseEntity.ok(employeeDetail);
+    }
+    
 
 }

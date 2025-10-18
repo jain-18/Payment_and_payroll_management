@@ -279,7 +279,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
 
     @Override
     @Transactional(readOnly = true)
-    public SalarySlip getSalarySlip(Long orgId, Long empId, String month, String year) {
+    public List<SalarySlip> getSalarySlip(Long orgId, Long empId, String month, String year) {
         // 1️⃣ Validate organization
         Organization organization = organizationRepo.findById(orgId)
                 .orElseThrow(() -> new ResourceNotFoundException("No organization found with id " + orgId));
@@ -288,41 +288,182 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
             throw new IllegalStateException("Organization is not active for this operation");
         }
 
-        // 2️⃣ Parse month & year
-        int periodMonth;
-        int periodYear;
-        try {
-            periodMonth = Integer.parseInt(month);
-            periodYear = Integer.parseInt(year);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Month and Year must be numeric values");
+        List<SalaryStructure> structures;
+
+        // 2️⃣ Determine which query to run
+        boolean hasMonth = month != null && !month.trim().isEmpty();
+        boolean hasYear = year != null && !year.trim().isEmpty();
+
+        if (hasMonth && hasYear) {
+            // Specific month/year → single record
+            int periodMonth;
+            int periodYear;
+            try {
+                periodMonth = Integer.parseInt(month);
+                periodYear = Integer.parseInt(year);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Month and Year must be numeric values");
+            }
+
+            SalaryStructure structure = salaryStructureRepository
+                    .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(
+                            orgId, empId, periodMonth, periodYear)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "No salary structure found for employee " + empId + " for " + month + "/" + year));
+
+            structures = List.of(structure);
+
+        } else if (hasYear) {
+            // All slips for a specific year
+            int periodYear;
+            try {
+                periodYear = Integer.parseInt(year);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Year must be numeric");
+            }
+
+            structures = salaryStructureRepository
+                    .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodYear(orgId, empId, periodYear);
+
+            if (structures.isEmpty()) {
+                throw new ResourceNotFoundException(
+                        "No salary slips found for employee " + empId + " for year " + year);
+            }
+
+        } else {
+            // No month/year → all salary slips
+            structures = salaryStructureRepository
+                    .findByOrganizationOrganizationIdAndEmployeeEmployeeId(orgId, empId);
+
+            if (structures.isEmpty()) {
+                throw new ResourceNotFoundException(
+                        "No salary slips found for employee " + empId);
+            }
         }
 
-        // 3️⃣ Find salary structure for employee in the given period
-        SalaryStructure structure = salaryStructureRepository
-                .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(
-                        orgId, empId, periodMonth, periodYear)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "No salary structure found for employee " + empId + " for " + month + "/" + year));
+        // 3️⃣ Convert structures to SalarySlip DTOs
+        return structures.stream().map(structure -> {
+            SalaryComponent component = structure.getSalaryComponent();
+            Employee employee = structure.getEmployee();
 
-        SalaryComponent component = structure.getSalaryComponent();
-        Employee employee = structure.getEmployee();
+            SalarySlip slip = new SalarySlip();
+            slip.setSlipId(structure.getSlipId());
+            slip.setEmployeeName(employee.getEmployeeName());
+            slip.setOrganizationName(organization.getOrganizationName());
+            slip.setBasicSalary(component.getBasicSalary());
+            slip.setHra(component.getHra());
+            slip.setDa(component.getDa());
+            slip.setPf(component.getPf());
+            slip.setOtherAllowances(component.getOtherAllowances());
+            slip.setNetSalary(component.getNetSalary());
+            slip.setPeriodMonth(structure.getPeriodMonth());
+            slip.setPeriodYear(structure.getPeriodYear());
 
-        // 4️⃣ Build response DTO
-        SalarySlip slip = new SalarySlip();
-        slip.setSlipId(structure.getSlipId());
-        slip.setEmployeeName(employee.getEmployeeName());
-        slip.setOrganizationName(organization.getOrganizationName());
-        slip.setBasicSalary(component.getBasicSalary());
-        slip.setHra(component.getHra());
-        slip.setDa(component.getDa());
-        slip.setPf(component.getPf());
-        slip.setOtherAllowances(component.getOtherAllowances());
-        slip.setNetSalary(component.getNetSalary());
-        slip.setPeriodMonth(structure.getPeriodMonth());
-        slip.setPeriodYear(structure.getPeriodYear());
+            return slip;
+        }).toList();
+    }
 
-        return slip;
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SalarySlip> getSalarySlipWithPagination(
+            Long orgId,
+            Long empId,
+            String month,
+            String year,
+            PageRequest pageable) {
+        // 1️⃣ Validate organization
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization found with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        Page<SalaryStructure> structures;
+
+        // 2️⃣ Determine query conditions
+        boolean hasMonth = month != null && !month.trim().isEmpty();
+        boolean hasYear = year != null && !year.trim().isEmpty();
+
+        // 3️⃣ Month + Year given → find exact slip
+        if (hasMonth && hasYear) {
+            int periodMonth;
+            int periodYear;
+            try {
+                periodMonth = Integer.parseInt(month);
+                periodYear = Integer.parseInt(year);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Month and Year must be numeric values");
+            }
+
+            Optional<SalaryStructure> optStructure = salaryStructureRepository
+                    .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(
+                            orgId, empId, periodMonth, periodYear);
+
+            if (optStructure.isEmpty()) {
+                // No salary structure found → return empty page instead of error
+                return Page.empty(pageable);
+            }
+
+            // Wrap single result into a Page
+            List<SalaryStructure> singleResult = List.of(optStructure.get());
+            Page<SalaryStructure> singlePage = new org.springframework.data.domain.PageImpl<>(singleResult, pageable,
+                    1);
+
+            return convertToSalarySlipPage(singlePage, organization);
+        }
+
+        // 4️⃣ Year only → get all salary slips for that year with pagination
+        if (hasYear) {
+            int periodYear;
+            try {
+                periodYear = Integer.parseInt(year);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Year must be numeric");
+            }
+
+            structures = salaryStructureRepository
+                    .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodYear(
+                            orgId, empId, periodYear, pageable);
+
+            if (structures.isEmpty()) {
+                return Page.empty(pageable);
+            }
+
+            return convertToSalarySlipPage(structures, organization);
+        }
+
+        // 5️⃣ No month/year → get all salary slips
+        structures = salaryStructureRepository
+                .findByOrganizationOrganizationIdAndEmployeeEmployeeId(orgId, empId, pageable);
+
+        if (structures.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        return convertToSalarySlipPage(structures, organization);
+    }
+
+    private Page<SalarySlip> convertToSalarySlipPage(Page<SalaryStructure> structures, Organization organization) {
+        return structures.map(structure -> {
+            SalaryComponent component = structure.getSalaryComponent();
+            Employee employee = structure.getEmployee();
+
+            SalarySlip slip = new SalarySlip();
+            slip.setSlipId(structure.getSlipId());
+            slip.setEmployeeName(employee.getEmployeeName());
+            slip.setOrganizationName(organization.getOrganizationName());
+            slip.setBasicSalary(component.getBasicSalary());
+            slip.setHra(component.getHra());
+            slip.setDa(component.getDa());
+            slip.setPf(component.getPf());
+            slip.setOtherAllowances(component.getOtherAllowances());
+            slip.setNetSalary(component.getNetSalary());
+            slip.setPeriodMonth(structure.getPeriodMonth());
+            slip.setPeriodYear(structure.getPeriodYear());
+
+            return slip;
+        });
     }
 
 }
