@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.payment.dto.OrganizationResponse;
 import com.payment.dto.RequestResp;
 import com.payment.dto.VendorPaymentRequest;
 import com.payment.dto.VendorPaymentResponse;
@@ -63,6 +64,17 @@ public class VendorController {
     	String token = jwtTokenProvider.getTokenFromRequest(request);
     	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         return ResponseEntity.ok(vendorService.getVendorById(id, orgId));
+    }
+    
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/by-name")
+    public ResponseEntity<Page<VendorResponse>> getVendorByname(@RequestParam String vendorName,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "vendorName") String sortBy) {
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<VendorResponse> response = vendorService.getVendorByName(vendorName, pageable);
+        return ResponseEntity.ok(response);
     }
     
     @PreAuthorize("hasRole('ORGANIZATION')")

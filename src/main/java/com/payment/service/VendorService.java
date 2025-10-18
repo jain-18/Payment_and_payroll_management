@@ -3,8 +3,10 @@ package com.payment.service;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.payment.dto.OrganizationResponse;
 import com.payment.dto.RequestResp;
 import com.payment.dto.VendorPaymentRequest;
 import com.payment.dto.VendorPaymentResponse;
@@ -36,4 +38,6 @@ public interface VendorService {
     Page<RequestResp> getAllVendorPaymentByStatus(Long orgId, String status, Pageable pageable);
 
     VendorPaymentResponse updatePaymentRequest(Long orgId, VendorPaymentUpdate dto);
+    
+    Page<VendorResponse> getVendorByName(String vendorName, PageRequest pageable);
 }

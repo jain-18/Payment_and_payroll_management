@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +36,8 @@ import com.payment.repo.VendorRepo;
 @Transactional
 public class VendorServiceImpl implements VendorService {
 
+	@Autowired ModelMapper modelMapper;
+	
     @Autowired
     VendorRepo vendorRepo;
     @Autowired
@@ -554,6 +557,15 @@ public class VendorServiceImpl implements VendorService {
         response.setVendorId(updated.getVendor().getVendorId());
         response.setVendorName(updated.getVendor().getVendorName());
 
+        return response;
+    }
+    
+    @Override
+    public Page<VendorResponse> getVendorByName(String vendorName, PageRequest pageable) {
+      
+        Page<Vendor> vendors = vendorRepo.findByVendorNameContainingIgnoreCase(vendorName, pageable);
+        Page<VendorResponse> response = vendors
+                .map(ven -> modelMapper.map(ven, VendorResponse.class));
         return response;
     }
 
