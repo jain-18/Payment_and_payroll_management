@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.payment.dto.EmployeeDetail;
 import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
 import com.payment.dto.EmployeeUpdateRequest;
@@ -360,6 +361,27 @@ public class EmployeeServiceImpl implements EmployeeService {
             resp.setSolved(concern.isSolved());
             return resp;
         });
+    }
+
+    @Override
+    public EmployeeDetail getEmployeeDetail(Long empId) {
+        Employee employee = employeeRepository.findById(empId)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + empId));
+        EmployeeDetail detail = new EmployeeDetail();
+        detail.setEmployeeId(employee.getEmployeeId());
+        detail.setEmployeeName(employee.getEmployeeName());
+        detail.setEmail(employee.getEmail());
+        detail.setEmployeeRole(employee.getEmployeeRole());
+        detail.setDepartment(employee.getDepartment());
+        detail.setSalary(employee.getSalary());
+        detail.setJoinedDate(employee.getJoinedDate());
+        if (employee.getAccount() != null) {
+            detail.setAccountNumber(employee.getAccount().getAccountNumber());
+            detail.setIfsc(employee.getAccount().getIfsc());
+        }
+        detail.setOrganizationName(employee.getOrganization().getOrganizationName());
+        detail.setActive(employee.isActive());
+        return detail;
     }
 
     
