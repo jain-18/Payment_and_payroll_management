@@ -26,7 +26,7 @@ public class VendorResponse {
     private String phoneNumber;
 	
 	@NotBlank(message = "Account number cannot be blank")
-    @Pattern(regexp = "^[0-9]{10,20}$", message = "Account number must be 10-20 digits")
+    @Pattern(regexp = "^[0-9]{9,18}$", message = "Account number must be 9-18 digits")
     private String accountNumber;
 	
 	@NotBlank(message = "IFSC code cannot be blank")
