@@ -114,4 +114,15 @@ public class SalaryStructureController {
         return ResponseEntity.ok(resp);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @PostMapping("/createAllSalaryStructure")
+    public ResponseEntity<String> sendAllRequest(HttpServletRequest httpServletRequest) {
+        String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);
+        Long orgId = jwtTokenProvider.extractOrganizationId(token);
+        salaryStructureService.createAllSalaryStructure(orgId);
+        return ResponseEntity.ok("Salary structures created successfully for all employees.");
+    }
+    
+
+
 }

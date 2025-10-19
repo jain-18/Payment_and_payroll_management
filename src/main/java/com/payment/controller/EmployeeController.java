@@ -134,6 +134,23 @@ public class EmployeeController {
         EmployeeDetail employeeDetail = employeeService.getEmployeeDetail(empId);
         return ResponseEntity.ok(employeeDetail);
     }
+
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/seachEmployee")
+    public ResponseEntity<Page<EmployeeResponse>> searchEmployees(
+            @RequestParam String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "employeeName") String sortBy,
+            HttpServletRequest httpServletRequest) {
+
+        // code for fetching orgId from jwt
+    	String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+        Page<EmployeeResponse> response = employeeService.searchEmployees(keyword, pageable, orgId);
+        return ResponseEntity.ok(response);
+    }
     
 
 }
