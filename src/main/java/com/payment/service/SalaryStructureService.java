@@ -25,4 +25,6 @@ public interface SalaryStructureService {
     List<SalarySlip> getSalarySlip(Long orgId, Long empId, String month, String year);
 
     Page<SalarySlip> getSalarySlipWithPagination(Long orgId, Long empId, String month, String year, PageRequest pageable);
+
+    void createAllSalaryStructure(Long orgId);
 }
