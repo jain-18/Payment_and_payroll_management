@@ -26,4 +26,6 @@ public interface VendorPaymentRepo extends JpaRepository<VendorPayment, Long> {
     Optional<VendorPayment> findByVendor(Vendor vendor);
     
     boolean existsByVendor(Vendor vendor);
+    
+    Page<VendorPayment> findByVendor_Organizations_OrganizationId(Long orgId, Pageable pageable);
 }

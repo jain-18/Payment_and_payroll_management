@@ -135,6 +135,20 @@ public class VendorController {
         Page<VendorPaymentResponse> payments = vendorService.getPaymentStatus(orgId, "PAID", page, size);
         return ResponseEntity.ok(payments);
     }
+    
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/payments/all")
+    public ResponseEntity<Page<VendorPaymentResponse>> getAllVendorPayments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+
+        String token = jwtTokenProvider.getTokenFromRequest(request);
+        Long orgId = jwtTokenProvider.extractOrganizationId(token);
+
+        Page<VendorPaymentResponse> payments = vendorService.getAllVendorPayments(orgId, page, size);
+        return ResponseEntity.ok(payments);
+    }
 
     @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/payments/notPaid")

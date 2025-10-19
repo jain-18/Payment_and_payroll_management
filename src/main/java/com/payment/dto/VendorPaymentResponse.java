@@ -15,4 +15,6 @@ public class VendorPaymentResponse {
     private Long vendorId;
     private String vendorName;
     private String status;
+    
+    private Long requestId;
 }
