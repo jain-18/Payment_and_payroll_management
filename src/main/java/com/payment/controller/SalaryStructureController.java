@@ -115,6 +115,28 @@ public class SalaryStructureController {
     }
 
     @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/employee-salary-slips")
+    public ResponseEntity<Page<SalarySlip>> getSalarySlipsOfEmployee(
+            HttpServletRequest request,
+            @RequestParam Long empId,
+            @RequestParam(required = false) String month,
+            @RequestParam(required = false) String year,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDir) {
+
+        String token = jwtTokenProvider.getTokenFromRequest(request);
+        Long orgId = jwtTokenProvider.extractOrganizationId(token);
+
+        Sort sort = sortDir.equalsIgnoreCase("DESC") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        PageRequest pageable = PageRequest.of(page, size, sort);
+
+        Page<SalarySlip> resp = salaryStructureService.getSalarySlipWithPagination(orgId, empId, month, year, pageable);
+        return ResponseEntity.ok(resp);
+    }
+    
+    @PreAuthorize("hasRole('ORGANIZATION')")
     @PostMapping("/createAllSalaryStructure")
     public ResponseEntity<String> sendAllRequest(HttpServletRequest httpServletRequest) {
         String token = jwtTokenProvider.getTokenFromRequest(httpServletRequest);

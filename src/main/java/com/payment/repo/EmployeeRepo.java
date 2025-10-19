@@ -20,4 +20,8 @@ public interface EmployeeRepo extends JpaRepository<Employee, Long> {
             Long orgId, String keyword, String keyword2, PageRequest pageable);
 
     List<Employee> findByOrganizationOrganizationId(Long organizationId);
+    
+    Page<Employee> findByEmployeeNameContainingIgnoreCaseAndOrganization_OrganizationId(
+            String employeeName, Long orgId, Pageable pageable);
+
 }

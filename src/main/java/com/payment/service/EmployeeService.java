@@ -29,4 +29,7 @@ public interface EmployeeService {
     EmployeeDetail getEmployeeDetail(Long empId);
 
     Page<EmployeeResponse> searchEmployees(String keyword, PageRequest pageable, Long orgId);
+    
+    Page<EmployeeResponse> getEmployeesByName(String employeeName, Pageable pageable, Long orgId);
+
 }

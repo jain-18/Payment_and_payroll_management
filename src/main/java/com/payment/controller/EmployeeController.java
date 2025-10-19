@@ -24,6 +24,7 @@ import com.payment.dto.EmployeeRequest;
 import com.payment.dto.EmployeeResponse;
 import com.payment.dto.EmployeeUpdateRequest;
 import com.payment.dto.RaiseConcernedResp;
+import com.payment.dto.VendorResponse;
 import com.payment.security.JwtTokenProvider;
 import com.payment.service.EmployeeService;
 
@@ -100,6 +101,26 @@ public class EmployeeController {
         employeeService.deleteEmployee(id, orgId);
         return ResponseEntity.noContent().build();
     }
+    
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/search-employees")
+    public ResponseEntity<Page<EmployeeResponse>> searchEmployeesByName(
+            @RequestParam String name,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "employeeName") String sortBy,
+            HttpServletRequest request) {
+
+        String token = jwtTokenProvider.getTokenFromRequest(request);
+        Long orgId = jwtTokenProvider.extractOrganizationId(token);
+
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
+
+        Page<EmployeeResponse> employees = employeeService.getEmployeesByName(name, pageable, orgId);
+
+        return ResponseEntity.ok(employees);
+    }
+
 
     @PreAuthorize("hasRole('EMPLOYEE')")
     @PostMapping("/raise-concerns")
