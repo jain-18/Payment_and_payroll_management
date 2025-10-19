@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -46,5 +47,11 @@ public interface SalaryStructureRepo extends JpaRepository<SalaryStructure, Long
 
         Page<SalaryStructure> findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodYear(
                         Long orgId, Long empId, int year, Pageable pageable);
+
+        Page<SalaryStructure> findByOrganizationOrganizationIdAndPeriodMonthAndPeriodYear(Long orgId, int currentMonth,
+                int currentYear, PageRequest pageable);
+
+        boolean existsByEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(Long employeeId, int currentMonth,
+                int currentYear);
 
 }

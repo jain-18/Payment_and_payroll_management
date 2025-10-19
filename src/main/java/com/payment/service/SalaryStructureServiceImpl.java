@@ -192,7 +192,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
         request.setOrganization(organization);
         request.setRequestDate(LocalDate.now());
         request.setRequestStatus("PENDING");
-        request.setRequestType("SalaryPayment");
+        request.setRequestType("SALARYPAYMENT");
         request.setTotalAmount(totalSalary);
 
         Request savedRequest = requestRepo.save(request);
@@ -256,19 +256,24 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
     public Page<SalaryRequestOfMonth> getAllSalarySlip(Long orgId, String status, PageRequest pageable) {
         Page<SalaryStructure> slips;
 
+        int currentMonth = LocalDate.now().getMonthValue();
+        int currentYear = LocalDate.now().getYear();
+
         if (status == null || status.isBlank()) {
-            // If no status provided, fetch all
-            slips = salaryStructureRepository.findByOrganizationOrganizationId(orgId, pageable);
+            // ✅ If no status provided → fetch slips for current month & year only
+            slips = salaryStructureRepository.findByOrganizationOrganizationIdAndPeriodMonthAndPeriodYear(
+                    orgId, currentMonth, currentYear, pageable);
         } else {
-            slips = salaryStructureRepository.findByOrganizationOrganizationIdAndStatusIgnoreCase(orgId, status,
-                    pageable);
+            // ✅ If status provided → fetch slips for that status (irrespective of month)
+            slips = salaryStructureRepository.findByOrganizationOrganizationIdAndStatusIgnoreCase(
+                    orgId, status, pageable);
         }
 
         return slips.map(slip -> {
             SalaryRequestOfMonth res = new SalaryRequestOfMonth();
             res.setSlipId(slip.getSlipId());
             res.setEmployeeId(slip.getEmployee().getEmployeeId());
-            res.setEmployee(slip.getEmployee().getEmployeeName()); // assuming getter
+            res.setEmployee(slip.getEmployee().getEmployeeName());
             res.setSalary(slip.getSalaryComponent().getNetSalary());
             res.setStatus(slip.getStatus());
             res.setPeriodMonth(slip.getPeriodMonth());
@@ -464,6 +469,52 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
 
             return slip;
         });
+    }
+
+     @Override
+    @Transactional
+    public void createAllSalaryStructure(Long orgId) {
+        // 1️⃣ Fetch the organization once
+        Organization organization = organizationRepository.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("Organization not found with id " + orgId));
+
+        // 2️⃣ Get all employees in the organization
+        List<Employee> employees = employeeRepository.findByOrganizationOrganizationId(orgId);
+        if (employees.isEmpty()) {
+            throw new IllegalStateException("No employees found for organization ID: " + orgId);
+        }
+
+        // 3️⃣ Determine current month & year
+        int currentMonth = LocalDate.now().getMonthValue();
+        int currentYear = LocalDate.now().getYear();
+
+        // 4️⃣ Create salary structure for each employee
+        for (Employee employee : employees) {
+
+            // 🔸 Check if structure already exists for this employee & period
+            boolean exists = salaryStructureRepository
+                    .existsByEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(employee.getEmployeeId(), currentMonth, currentYear);
+
+            if (exists) {
+                // Skip to avoid duplicate entries
+                continue;
+            }
+
+            // 🔸 Calculate components based on employee's base salary
+            SalaryComponent component = calculateSalaryComponents(employee.getSalary());
+
+            // 🔸 Build structure entity
+            SalaryStructure structure = new SalaryStructure();
+            structure.setEmployee(employee);
+            structure.setOrganization(organization);
+            structure.setSalaryComponent(component);
+            structure.setPeriodMonth(currentMonth);
+            structure.setPeriodYear(currentYear);
+            structure.setStatus("DRAFTED");
+
+            // 🔸 Persist structure
+            salaryStructureRepository.save(structure);
+        }
     }
 
 }

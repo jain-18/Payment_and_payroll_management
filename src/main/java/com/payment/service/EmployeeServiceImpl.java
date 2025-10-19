@@ -384,6 +384,16 @@ public class EmployeeServiceImpl implements EmployeeService {
         return detail;
     }
 
+    @Override
+    public Page<EmployeeResponse> searchEmployees(String keyword, PageRequest pageable, Long orgId) {
+       
+        Page<Employee> employees = employeeRepository
+                .findByOrganization_OrganizationIdAndEmployeeNameContainingIgnoreCaseOrEmailContainingIgnoreCase(
+                        orgId, keyword, keyword, pageable);
+
+        return employees.map(this::mapToResponse);
+    }
+
     
 
 }

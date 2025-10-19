@@ -27,4 +27,6 @@ public interface EmployeeService {
     Page<RaiseConcernedResp> getAllRaisedConcerns(PageRequest pageable, Long orgId, Long empId);
 
     EmployeeDetail getEmployeeDetail(Long empId);
+
+    Page<EmployeeResponse> searchEmployees(String keyword, PageRequest pageable, Long orgId);
 }
