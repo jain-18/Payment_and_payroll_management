@@ -16,4 +16,8 @@ public interface RaiseConcernsRepo extends JpaRepository<RaiseConcerns, Long> {
             Pageable pageable);
 
     Page<RaiseConcerns> findByOrganizationOrganizationId(Long orgId, Pageable pageable);
+    
+    Page<RaiseConcerns> findByOrganizationOrganizationIdAndIsSolved(Long orgId, boolean isSolved, Pageable pageable);
+
+
 }

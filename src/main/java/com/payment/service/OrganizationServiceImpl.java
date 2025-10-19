@@ -171,30 +171,55 @@ public class OrganizationServiceImpl implements OrganizationService {
         return response;
     }
 
+//    @Override
+//    public Page<RaiseConcernedResp> getAllRaisedConcernsOfOrg(PageRequest pageable, Long orgId) {
+//        Page<RaiseConcerns> concernsPage = raiseConcernsRepo.findByOrganizationOrganizationId(orgId, pageable);
+//
+//        return concernsPage.map(concern -> {
+//            RaiseConcernedResp resp = new RaiseConcernedResp();
+//            resp.setConcernId(concern.getConcernId());
+//            resp.setEmployeeId(concern.getEmployee().getEmployeeId());
+//            resp.setSlipId(concern.getSalaryStructure().getSlipId());
+//            resp.setRaiseAt(concern.getRaiseAt().toString()); // you can format if needed
+//            resp.setSolved(concern.isSolved());
+//            
+////            if (concern.isSolved()) {
+////                Employee emp = concern.getEmployee();
+////                if (emp != null && emp.getEmail() != null && !emp.getEmail().isBlank()) {
+////                    String subject = "Your Raised Concern Has Been Resolved";
+////                    String message = "Dear " + emp.getEmployeeName() + ",\n\n"
+////                            + "We’re pleased to inform you that your concern raised on "
+////                            + concern.getRaiseAt() + " has been successfully resolved.\n\n"
+////                            + "If you have any further questions, feel free to reach out.\n\n"
+////                            + "Regards,\nPaymentApp Support Team";
+////                    emailService.sendCustomEmail(emp.getEmail(), subject, message);
+////                }
+////            }
+//            
+//            return resp;
+//        });
+//    }
+    
     @Override
-    public Page<RaiseConcernedResp> getAllRaisedConcernsOfOrg(PageRequest pageable, Long orgId) {
-        Page<RaiseConcerns> concernsPage = raiseConcernsRepo.findByOrganizationOrganizationId(orgId, pageable);
+    public Page<RaiseConcernedResp> getAllRaisedConcernsOfOrg(Pageable pageable, Long orgId, Boolean solved) {
+
+        Page<RaiseConcerns> concernsPage;
+
+        if (solved == null) {
+            // 🟡 No filter provided → show all
+            concernsPage = raiseConcernsRepo.findByOrganizationOrganizationId(orgId, pageable);
+        } else {
+            // 🟢 Filter by solved true/false
+            concernsPage = raiseConcernsRepo.findByOrganizationOrganizationIdAndIsSolved(orgId, solved, pageable);
+        }
 
         return concernsPage.map(concern -> {
             RaiseConcernedResp resp = new RaiseConcernedResp();
             resp.setConcernId(concern.getConcernId());
-            resp.setOrganizationName(concern.getOrganization().getOrganizationName());
-            resp.setRaiseAt(concern.getRaiseAt().toString()); // you can format if needed
+            resp.setEmployeeId(concern.getEmployee().getEmployeeId());
+            resp.setSlipId(concern.getSalaryStructure().getSlipId());
+            resp.setRaiseAt(concern.getRaiseAt().toString());
             resp.setSolved(concern.isSolved());
-            
-            if (concern.isSolved()) {
-                Employee emp = concern.getEmployee();
-                if (emp != null && emp.getEmail() != null && !emp.getEmail().isBlank()) {
-                    String subject = "Your Raised Concern Has Been Resolved";
-                    String message = "Dear " + emp.getEmployeeName() + ",\n\n"
-                            + "We’re pleased to inform you that your concern raised on "
-                            + concern.getRaiseAt() + " has been successfully resolved.\n\n"
-                            + "If you have any further questions, feel free to reach out.\n\n"
-                            + "Regards,\nPaymentApp Support Team";
-                    emailService.sendCustomEmail(emp.getEmail(), subject, message);
-                }
-            }
-            
             return resp;
         });
     }
@@ -214,6 +239,17 @@ public class OrganizationServiceImpl implements OrganizationService {
         // 3. Mark as solved
         concern.setSolved(true);
         raiseConcernsRepo.save(concern);
+        
+            Employee emp = concern.getEmployee();
+            if (emp != null && emp.getEmail() != null && !emp.getEmail().isBlank()) {
+                String subject = "Your Raised Concern Has Been Resolved";
+                String message = "Dear " + emp.getEmployeeName() + ",\n\n"
+                        + "We’re pleased to inform you that your concern raised on "
+                        + concern.getRaiseAt() + " has been successfully resolved.\n\n"
+                        + "If you have any further questions, feel free to reach out.\n\n"
+                        + "Regards,\nPaymentApp Support Team";
+                emailService.sendCustomEmail(emp.getEmail(), subject, message);
+            }
 
         // 4. Map entity to response DTO
         RaiseConcernedResp resp = new RaiseConcernedResp();

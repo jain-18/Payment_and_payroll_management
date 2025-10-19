@@ -15,7 +15,7 @@ import lombok.Setter;
 public class AccountDto {
 
     @NotBlank(message = "account no cannot be blank")
-	@Pattern(regexp = "^[0-9]{10,20}$", message = "Account number must be 10-20 digits")
+	@Pattern(regexp = "^[0-9]{9,18}$", message = "Account number must be 9-18 digits")
 	private String accountNumber;
 	
 	@NotBlank(message = "Account type should not be null")

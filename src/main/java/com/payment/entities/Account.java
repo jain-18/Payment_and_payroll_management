@@ -30,7 +30,7 @@ public class Account {
 	private Long accountId;
 	
 	@NotBlank(message = "account no cannot be blank")
-	@Pattern(regexp = "^[0-9]{10,20}$", message = "Account number must be 10-20 digits")
+	@Pattern(regexp = "^[0-9]{9,18}$", message = "Account number must be 9-18 digits")
 	@Column(name = "account_number",unique = true)
 	private String accountNumber;
 	

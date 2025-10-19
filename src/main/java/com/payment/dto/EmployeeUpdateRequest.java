@@ -31,7 +31,7 @@ public class EmployeeUpdateRequest {
     @PastOrPresent(message = "Join Date should be present or past")
     private LocalDate joinedDate;
 
-    @Pattern(regexp = "^[0-9]{9,18}$", message = "Account number must be 10–20 digits")
+    @Pattern(regexp = "^[0-9]{9,18}$", message = "Account number must be 9–18 digits")
     private String accountNumber;
 
     private String ifsc;
