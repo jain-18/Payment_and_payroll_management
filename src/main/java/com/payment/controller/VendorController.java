@@ -239,18 +239,41 @@ public class VendorController {
         return ResponseEntity.ok(vendorService.getAllVendorPaymentByStatus(orgId, "APPROVED", pageable));
     }
 
+//    @PreAuthorize("hasRole('ORGANIZATION')")
+//    @GetMapping("/vendor-payments")
+//    public ResponseEntity<Page<RequestResp>> getVendorPaymentsByStatus(
+//            HttpServletRequest request,
+//            @RequestParam(defaultValue = "PENDING") String status,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size,
+//            @RequestParam(defaultValue = "actionDate") String sortBy,
+//            @RequestParam(defaultValue = "ASC") String sortDir) {
+//        // 🔐 Replace with actual logged-in org ID extraction
+//    	String token = jwtTokenProvider.getTokenFromRequest(request);
+//    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+//
+//        Sort sort = sortDir.equalsIgnoreCase("DESC")
+//                ? Sort.by(sortBy).descending()
+//                : Sort.by(sortBy).ascending();
+//
+//        PageRequest pageable = PageRequest.of(page, size, sort);
+//
+//        Page<RequestResp> response = vendorService.getAllVendorPaymentByStatus(orgId, status, pageable);
+//        return ResponseEntity.ok(response);
+//    }
+    
     @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/vendor-payments")
     public ResponseEntity<Page<RequestResp>> getVendorPaymentsByStatus(
             HttpServletRequest request,
-            @RequestParam(defaultValue = "PENDING") String status,
+            @RequestParam(required = false) String status,  // make it optional
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "actionDate") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDir) {
-        // 🔐 Replace with actual logged-in org ID extraction
-    	String token = jwtTokenProvider.getTokenFromRequest(request);
-    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+
+        String token = jwtTokenProvider.getTokenFromRequest(request);
+        Long orgId = jwtTokenProvider.extractOrganizationId(token);
 
         Sort sort = sortDir.equalsIgnoreCase("DESC")
                 ? Sort.by(sortBy).descending()
@@ -258,9 +281,17 @@ public class VendorController {
 
         PageRequest pageable = PageRequest.of(page, size, sort);
 
-        Page<RequestResp> response = vendorService.getAllVendorPaymentByStatus(orgId, status, pageable);
+        Page<RequestResp> response;
+
+        // 🧠 If no status given or 'ALL', fetch all payments
+        if (status == null || status.equalsIgnoreCase("ALL")) {
+            response = vendorService.getAllVendorPayments(orgId, pageable);
+        } else {
+            response = vendorService.getAllVendorPaymentByStatus(orgId, status, pageable);
+        }
         return ResponseEntity.ok(response);
     }
+
 
     @PreAuthorize("hasRole('ORGANIZATION')")
     @PutMapping("/editRejectedVendorPayment")

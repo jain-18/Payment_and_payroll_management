@@ -32,4 +32,5 @@ public interface RequestRepo extends JpaRepository<Request, Long> {
         Page<Request> findByCreatedByLikeIgnoreCaseAndRequestTypeLikeIgnoreCaseAndRequestStatusLikeIgnoreCase(
                         String createdBy, String requestType, String status, Pageable pageable);
 
+        Page<Request> findByOrganization_OrganizationId(Long orgId, Pageable pageable);
 }

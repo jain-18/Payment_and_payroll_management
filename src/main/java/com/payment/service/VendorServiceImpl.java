@@ -536,6 +536,38 @@ public class VendorServiceImpl implements VendorService {
             return resp;
         });
     }
+    
+    @Override
+    public Page<RequestResp> getAllVendorPayments(Long orgId, Pageable pageable) {
+
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        // Fetch all requests for the organization (without filtering by status)
+        Page<Request> requests = requestRepo.findByOrganization_OrganizationId(orgId, pageable);
+
+        return requests.map(req -> {
+            RequestResp resp = new RequestResp();
+            resp.setRequestId(req.getRequestId());
+            resp.setRequestType(req.getRequestType());
+            resp.setRequestStatus(req.getRequestStatus());
+            resp.setRequestDate(req.getRequestDate());
+            resp.setTotalAmount(req.getTotalAmount());
+            resp.setCreatedBy(req.getCreatedBy());
+            resp.setRejectReason(req.getRejectReason());
+
+            if (req.getOrganization() != null && req.getOrganization().getAccount() != null) {
+                resp.setBalance(req.getOrganization().getAccount().getBalance());
+            }
+
+            return resp;
+        });
+    }
+
 
     @Override
     @Transactional
