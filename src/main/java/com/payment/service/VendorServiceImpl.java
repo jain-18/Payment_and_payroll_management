@@ -528,7 +528,7 @@ public class VendorServiceImpl implements VendorService {
             resp.setTotalAmount(req.getTotalAmount());
             resp.setCreatedBy(req.getCreatedBy());
             resp.setRejectReason(req.getRejectReason());
-
+            resp.setActionDate(req.getActionDate());
             if (req.getOrganization() != null && req.getOrganization().getAccount() != null) {
                 resp.setBalance(req.getOrganization().getAccount().getBalance());
             }
@@ -559,7 +559,7 @@ public class VendorServiceImpl implements VendorService {
             resp.setTotalAmount(req.getTotalAmount());
             resp.setCreatedBy(req.getCreatedBy());
             resp.setRejectReason(req.getRejectReason());
-
+            resp.setActionDate(req.getActionDate());
             if (req.getOrganization() != null && req.getOrganization().getAccount() != null) {
                 resp.setBalance(req.getOrganization().getAccount().getBalance());
             }
