@@ -71,9 +71,11 @@ public class VendorController {
     public ResponseEntity<Page<VendorResponse>> getVendorByname(@RequestParam String vendorName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "vendorName") String sortBy) {
+            @RequestParam(defaultValue = "vendorName") String sortBy, HttpServletRequest request) {
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<VendorResponse> response = vendorService.getVendorByName(vendorName, pageable);
+        Page<VendorResponse> response = vendorService.getVendorByName(vendorName, pageable, orgId);
         return ResponseEntity.ok(response);
     }
     

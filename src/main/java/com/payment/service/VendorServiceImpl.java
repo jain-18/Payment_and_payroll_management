@@ -561,12 +561,29 @@ public class VendorServiceImpl implements VendorService {
     }
     
     @Override
-    public Page<VendorResponse> getVendorByName(String vendorName, PageRequest pageable) {
-      
-        Page<Vendor> vendors = vendorRepo.findByVendorNameContainingIgnoreCase(vendorName, pageable);
-        Page<VendorResponse> response = vendors
-                .map(ven -> modelMapper.map(ven, VendorResponse.class));
-        return response;
+    public Page<VendorResponse> getVendorByName(String vendorName, Pageable pageable, Long orgId) {
+
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        Page<Vendor> vendors = vendorRepo
+                .findByVendorNameContainingIgnoreCaseAndOrganizations_OrganizationId(vendorName, orgId, pageable);
+
+        return vendors.map(vendor -> {
+            VendorResponse response = modelMapper.map(vendor, VendorResponse.class);
+            if (vendor.getAccount() != null) {
+                response.setAccountNumber(vendor.getAccount().getAccountNumber());
+                response.setIfsc(vendor.getAccount().getIfsc());
+            }
+            if (vendor.getOrganizations() != null) {
+                response.setOrganizationId(vendor.getOrganizations().getOrganizationId());
+            }
+            return response;
+        });
     }
 
 }

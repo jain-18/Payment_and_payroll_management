@@ -32,4 +32,8 @@ public interface VendorRepo extends JpaRepository<Vendor, Long> {
     List<Vendor> findByPhoneNumber(String phoneNumber);
     
     Page<Vendor> findByVendorNameContainingIgnoreCase(String vendorName, PageRequest pageable);
+    Page<Vendor> findByVendorNameContainingIgnoreCaseAndOrganizations_OrganizationId(
+            String vendorName,
+            Long organizationId,
+            Pageable pageable);
 }
