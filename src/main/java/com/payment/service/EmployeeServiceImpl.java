@@ -394,6 +394,27 @@ public class EmployeeServiceImpl implements EmployeeService {
         return employees.map(this::mapToResponse);
     }
 
-    
+    @Override
+    public Page<EmployeeResponse> getEmployeesByName(String employeeName, Pageable pageable, Long orgId) {
+
+        // 1️⃣ Validate organization
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        // 2️⃣ Fetch matching employees
+        Page<Employee> employees = employeeRepository
+                .findByEmployeeNameContainingIgnoreCaseAndOrganization_OrganizationId(employeeName, orgId, pageable);
+
+        // 3️⃣ Map to response DTOs
+        return employees.map(employee -> {
+            EmployeeResponse dto = mapToResponse(employee);
+            return dto;
+        });
+    }
+
 
 }

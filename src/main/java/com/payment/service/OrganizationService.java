@@ -21,7 +21,8 @@ public interface OrganizationService {
 
     Page<OrganizationResponse> getOrganizationByStatus(Pageable pageable,boolean status);
 
-    Page<RaiseConcernedResp> getAllRaisedConcernsOfOrg(PageRequest pageable, Long orgId);
+//    Page<RaiseConcernedResp> getAllRaisedConcernsOfOrg(PageRequest pageable, Long orgId);
+    Page<RaiseConcernedResp> getAllRaisedConcernsOfOrg(Pageable pageable, Long orgId, Boolean solved);
 
     RaiseConcernedResp solvedRaiseConcern(Long concernId, Long orgId);
 

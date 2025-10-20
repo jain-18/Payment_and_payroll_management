@@ -97,23 +97,41 @@ public class OrganizationController {
     // After clicking the edit the it can get stored in local storage, the data of concern
     // after editEmployee -> saveEmployee -> updateSalaryStructure -> Send request to admin-> organization have to mark maually to solved
     
+//    @PreAuthorize("hasRole('ORGANIZATION')")
+//    @GetMapping("/org-raised-concerns")
+//    public ResponseEntity<Page<RaiseConcernedResp>> getAllConcernsOfOrgagaization(
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size,
+//            @RequestParam(defaultValue = "raiseAt") String sortBy, HttpServletRequest request
+//    ){
+//    	String token = jwtTokenProvider.getTokenFromRequest(request);
+//    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+//        PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
+//        Page<RaiseConcernedResp> response = organizationService.getAllRaisedConcernsOfOrg(pageable, orgId);
+//        return ResponseEntity.ok(response);
+//    }
+    
     @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/org-raised-concerns")
-    public ResponseEntity<Page<RaiseConcernedResp>> getAllConcernsOfOrgagaization(
+    public ResponseEntity<Page<RaiseConcernedResp>> getAllConcernsOfOrganization(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "raiseAt") String sortBy, HttpServletRequest request
-    ){
-    	String token = jwtTokenProvider.getTokenFromRequest(request);
-    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+            @RequestParam(defaultValue = "raiseAt") String sortBy,
+            @RequestParam(required = false) Boolean solved, // ✅ optional filter
+            HttpServletRequest request) {
+
+        String token = jwtTokenProvider.getTokenFromRequest(request);
+        Long orgId = jwtTokenProvider.extractOrganizationId(token);
+
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).descending());
-        Page<RaiseConcernedResp> response = organizationService.getAllRaisedConcernsOfOrg(pageable, orgId);
+        Page<RaiseConcernedResp> response = organizationService.getAllRaisedConcernsOfOrg(pageable, orgId, solved);
+
         return ResponseEntity.ok(response);
     }
 
     @PreAuthorize("hasRole('ORGANIZATION')")
     @PostMapping("/solvedRaiseConcern")
-    public ResponseEntity<RaiseConcernedResp> solvedRaised(@RequestParam Long concernId,HttpServlet httpServlet, HttpServletRequest request) {
+    public ResponseEntity<RaiseConcernedResp> solvedRaised(@RequestParam Long concernId, HttpServletRequest request) {
     	String token = jwtTokenProvider.getTokenFromRequest(request);
     	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         RaiseConcernedResp resp = organizationService.solvedRaiseConcern(concernId,orgId);

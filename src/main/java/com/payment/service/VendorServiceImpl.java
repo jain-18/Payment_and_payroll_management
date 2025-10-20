@@ -400,6 +400,36 @@ public class VendorServiceImpl implements VendorService {
             resp.setVendorId(payment.getVendor().getVendorId());
             resp.setVendorName(payment.getVendor().getVendorName());
             resp.setStatus(payment.getStatus());
+            if (payment.getRequest() != null) {
+                resp.setRequestId(payment.getRequest().getRequestId());
+            }
+            return resp;
+        });
+    }
+    
+    @Override
+    public Page<VendorPaymentResponse> getAllVendorPayments(Long orgId, int page, int size) {
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<VendorPayment> payments = vendorPaymentRepo
+                .findByVendor_Organizations_OrganizationId(orgId, pageable);
+
+        return payments.map(payment -> {
+            VendorPaymentResponse resp = new VendorPaymentResponse();
+            resp.setVpId(payment.getVpId());
+            resp.setAmount(payment.getAmount());
+            resp.setVendorId(payment.getVendor().getVendorId());
+            resp.setVendorName(payment.getVendor().getVendorName());
+            resp.setStatus(payment.getStatus());
+            if (payment.getRequest() != null) {
+                resp.setRequestId(payment.getRequest().getRequestId());
+            }
             return resp;
         });
     }
@@ -498,7 +528,7 @@ public class VendorServiceImpl implements VendorService {
             resp.setTotalAmount(req.getTotalAmount());
             resp.setCreatedBy(req.getCreatedBy());
             resp.setRejectReason(req.getRejectReason());
-
+            resp.setActionDate(req.getActionDate());
             if (req.getOrganization() != null && req.getOrganization().getAccount() != null) {
                 resp.setBalance(req.getOrganization().getAccount().getBalance());
             }
@@ -506,6 +536,38 @@ public class VendorServiceImpl implements VendorService {
             return resp;
         });
     }
+    
+    @Override
+    public Page<RequestResp> getAllVendorPayments(Long orgId, Pageable pageable) {
+
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        // Fetch all requests for the organization (without filtering by status)
+        Page<Request> requests = requestRepo.findByOrganization_OrganizationId(orgId, pageable);
+
+        return requests.map(req -> {
+            RequestResp resp = new RequestResp();
+            resp.setRequestId(req.getRequestId());
+            resp.setRequestType(req.getRequestType());
+            resp.setRequestStatus(req.getRequestStatus());
+            resp.setRequestDate(req.getRequestDate());
+            resp.setTotalAmount(req.getTotalAmount());
+            resp.setCreatedBy(req.getCreatedBy());
+            resp.setRejectReason(req.getRejectReason());
+            resp.setActionDate(req.getActionDate());
+            if (req.getOrganization() != null && req.getOrganization().getAccount() != null) {
+                resp.setBalance(req.getOrganization().getAccount().getBalance());
+            }
+
+            return resp;
+        });
+    }
+
 
     @Override
     @Transactional
@@ -561,12 +623,29 @@ public class VendorServiceImpl implements VendorService {
     }
     
     @Override
-    public Page<VendorResponse> getVendorByName(String vendorName, PageRequest pageable) {
-      
-        Page<Vendor> vendors = vendorRepo.findByVendorNameContainingIgnoreCase(vendorName, pageable);
-        Page<VendorResponse> response = vendors
-                .map(ven -> modelMapper.map(ven, VendorResponse.class));
-        return response;
+    public Page<VendorResponse> getVendorByName(String vendorName, Pageable pageable, Long orgId) {
+
+        Organization organization = organizationRepo.findById(orgId)
+                .orElseThrow(() -> new ResourceNotFoundException("No organization with id " + orgId));
+
+        if (!organization.isActive()) {
+            throw new IllegalStateException("Organization is not active for this operation");
+        }
+
+        Page<Vendor> vendors = vendorRepo
+                .findByVendorNameContainingIgnoreCaseAndOrganizations_OrganizationId(vendorName, orgId, pageable);
+
+        return vendors.map(vendor -> {
+            VendorResponse response = modelMapper.map(vendor, VendorResponse.class);
+            if (vendor.getAccount() != null) {
+                response.setAccountNumber(vendor.getAccount().getAccountNumber());
+                response.setIfsc(vendor.getAccount().getIfsc());
+            }
+            if (vendor.getOrganizations() != null) {
+                response.setOrganizationId(vendor.getOrganizations().getOrganizationId());
+            }
+            return response;
+        });
     }
 
 }

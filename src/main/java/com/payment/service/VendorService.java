@@ -39,5 +39,9 @@ public interface VendorService {
 
     VendorPaymentResponse updatePaymentRequest(Long orgId, VendorPaymentUpdate dto);
     
-    Page<VendorResponse> getVendorByName(String vendorName, PageRequest pageable);
+    Page<VendorResponse> getVendorByName(String vendorName, Pageable pageable, Long orgId);
+    
+    Page<VendorPaymentResponse> getAllVendorPayments(Long orgId, int page, int size);
+    
+    Page<RequestResp> getAllVendorPayments(Long orgId, Pageable pageable) ;
 }

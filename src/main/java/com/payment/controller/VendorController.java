@@ -71,9 +71,11 @@ public class VendorController {
     public ResponseEntity<Page<VendorResponse>> getVendorByname(@RequestParam String vendorName,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "vendorName") String sortBy) {
+            @RequestParam(defaultValue = "vendorName") String sortBy, HttpServletRequest request) {
+    	String token = jwtTokenProvider.getTokenFromRequest(request);
+    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
         PageRequest pageable = PageRequest.of(page, size, Sort.by(sortBy).ascending());
-        Page<VendorResponse> response = vendorService.getVendorByName(vendorName, pageable);
+        Page<VendorResponse> response = vendorService.getVendorByName(vendorName, pageable, orgId);
         return ResponseEntity.ok(response);
     }
     
@@ -133,6 +135,20 @@ public class VendorController {
         Page<VendorPaymentResponse> payments = vendorService.getPaymentStatus(orgId, "PAID", page, size);
         return ResponseEntity.ok(payments);
     }
+    
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/payments/all")
+    public ResponseEntity<Page<VendorPaymentResponse>> getAllVendorPayments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+
+        String token = jwtTokenProvider.getTokenFromRequest(request);
+        Long orgId = jwtTokenProvider.extractOrganizationId(token);
+
+        Page<VendorPaymentResponse> payments = vendorService.getAllVendorPayments(orgId, page, size);
+        return ResponseEntity.ok(payments);
+    }
 
     @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/payments/notPaid")
@@ -146,6 +162,29 @@ public class VendorController {
         return ResponseEntity.ok(payments);
     }
 
+    @PreAuthorize("hasRole('ORGANIZATION')")
+    @GetMapping("/payments")
+    public ResponseEntity<Page<VendorPaymentResponse>> getPaymentsByStatus(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+
+        String token = jwtTokenProvider.getTokenFromRequest(request);
+        Long orgId = jwtTokenProvider.extractOrganizationId(token);
+
+        Page<VendorPaymentResponse> payments;
+
+        // If no status provided, return all payments
+        if (status == null || status.isBlank()) {
+            payments = vendorService.getAllVendorPayments(orgId, page, size);
+        } else {
+            payments = vendorService.getPaymentStatus(orgId, status.toUpperCase(), page, size);
+        }
+
+        return ResponseEntity.ok(payments);
+    }
+    
     @GetMapping("/allOrgPayments/paid")
     public ResponseEntity<Page<VendorPaymentResponse>> getOrgPaymentStatusPaid(
             @RequestParam(defaultValue = "0") int page,
@@ -200,18 +239,41 @@ public class VendorController {
         return ResponseEntity.ok(vendorService.getAllVendorPaymentByStatus(orgId, "APPROVED", pageable));
     }
 
+//    @PreAuthorize("hasRole('ORGANIZATION')")
+//    @GetMapping("/vendor-payments")
+//    public ResponseEntity<Page<RequestResp>> getVendorPaymentsByStatus(
+//            HttpServletRequest request,
+//            @RequestParam(defaultValue = "PENDING") String status,
+//            @RequestParam(defaultValue = "0") int page,
+//            @RequestParam(defaultValue = "10") int size,
+//            @RequestParam(defaultValue = "actionDate") String sortBy,
+//            @RequestParam(defaultValue = "ASC") String sortDir) {
+//        // 🔐 Replace with actual logged-in org ID extraction
+//    	String token = jwtTokenProvider.getTokenFromRequest(request);
+//    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+//
+//        Sort sort = sortDir.equalsIgnoreCase("DESC")
+//                ? Sort.by(sortBy).descending()
+//                : Sort.by(sortBy).ascending();
+//
+//        PageRequest pageable = PageRequest.of(page, size, sort);
+//
+//        Page<RequestResp> response = vendorService.getAllVendorPaymentByStatus(orgId, status, pageable);
+//        return ResponseEntity.ok(response);
+//    }
+    
     @PreAuthorize("hasRole('ORGANIZATION')")
     @GetMapping("/vendor-payments")
     public ResponseEntity<Page<RequestResp>> getVendorPaymentsByStatus(
             HttpServletRequest request,
-            @RequestParam(defaultValue = "PENDING") String status,
+            @RequestParam(required = false) String status,  // make it optional
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "actionDate") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDir) {
-        // 🔐 Replace with actual logged-in org ID extraction
-    	String token = jwtTokenProvider.getTokenFromRequest(request);
-    	Long orgId = jwtTokenProvider.extractOrganizationId(token);
+
+        String token = jwtTokenProvider.getTokenFromRequest(request);
+        Long orgId = jwtTokenProvider.extractOrganizationId(token);
 
         Sort sort = sortDir.equalsIgnoreCase("DESC")
                 ? Sort.by(sortBy).descending()
@@ -219,9 +281,17 @@ public class VendorController {
 
         PageRequest pageable = PageRequest.of(page, size, sort);
 
-        Page<RequestResp> response = vendorService.getAllVendorPaymentByStatus(orgId, status, pageable);
+        Page<RequestResp> response;
+
+        // 🧠 If no status given or 'ALL', fetch all payments
+        if (status == null || status.equalsIgnoreCase("ALL")) {
+            response = vendorService.getAllVendorPayments(orgId, pageable);
+        } else {
+            response = vendorService.getAllVendorPaymentByStatus(orgId, status, pageable);
+        }
         return ResponseEntity.ok(response);
     }
+
 
     @PreAuthorize("hasRole('ORGANIZATION')")
     @PutMapping("/editRejectedVendorPayment")
