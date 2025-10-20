@@ -54,4 +54,13 @@ public interface SalaryStructureRepo extends JpaRepository<SalaryStructure, Long
         boolean existsByEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(Long employeeId, int currentMonth,
                 int currentYear);
 
+        Page<SalaryStructure> findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndStatus(Long orgId, Long empId,
+                String status, PageRequest pageable);
+
+        Page<SalaryStructure> findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodYearAndStatus(Long orgId,
+                Long empId, int periodYear, String status, PageRequest pageable);
+
+        Optional<SalaryStructure> findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodMonthAndPeriodYearAndStatus(
+                Long orgId, Long empId, int periodMonth, int periodYear, String status);
+
 }

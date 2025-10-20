@@ -376,6 +376,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
             String month,
             String year,
             PageRequest pageable) {
+
         // 1️⃣ Validate organization
         Organization organization = organizationRepo.findById(orgId)
                 .orElseThrow(() -> new ResourceNotFoundException("No organization found with id " + orgId));
@@ -385,6 +386,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
         }
 
         Page<SalaryStructure> structures;
+        String status = "PAID"; // 👈 filter only PAID slips
 
         // 2️⃣ Determine query conditions
         boolean hasMonth = month != null && !month.trim().isEmpty();
@@ -402,15 +404,13 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
             }
 
             Optional<SalaryStructure> optStructure = salaryStructureRepository
-                    .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(
-                            orgId, empId, periodMonth, periodYear);
+                    .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodMonthAndPeriodYearAndStatus(
+                            orgId, empId, periodMonth, periodYear, status);
 
             if (optStructure.isEmpty()) {
-                // No salary structure found → return empty page instead of error
                 return Page.empty(pageable);
             }
 
-            // Wrap single result into a Page
             List<SalaryStructure> singleResult = List.of(optStructure.get());
             Page<SalaryStructure> singlePage = new org.springframework.data.domain.PageImpl<>(singleResult, pageable,
                     1);
@@ -418,7 +418,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
             return convertToSalarySlipPage(singlePage, organization);
         }
 
-        // 4️⃣ Year only → get all salary slips for that year with pagination
+        // 4️⃣ Year only → get all salary slips for that year (PAID)
         if (hasYear) {
             int periodYear;
             try {
@@ -428,8 +428,8 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
             }
 
             structures = salaryStructureRepository
-                    .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodYear(
-                            orgId, empId, periodYear, pageable);
+                    .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndPeriodYearAndStatus(
+                            orgId, empId, periodYear, status, pageable);
 
             if (structures.isEmpty()) {
                 return Page.empty(pageable);
@@ -438,9 +438,9 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
             return convertToSalarySlipPage(structures, organization);
         }
 
-        // 5️⃣ No month/year → get all salary slips
+        // 5️⃣ No month/year → get all PAID salary slips
         structures = salaryStructureRepository
-                .findByOrganizationOrganizationIdAndEmployeeEmployeeId(orgId, empId, pageable);
+                .findByOrganizationOrganizationIdAndEmployeeEmployeeIdAndStatus(orgId, empId, status, pageable);
 
         if (structures.isEmpty()) {
             return Page.empty(pageable);
@@ -471,7 +471,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
         });
     }
 
-     @Override
+    @Override
     @Transactional
     public void createAllSalaryStructure(Long orgId) {
         // 1️⃣ Fetch the organization once
@@ -493,7 +493,8 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
 
             // 🔸 Check if structure already exists for this employee & period
             boolean exists = salaryStructureRepository
-                    .existsByEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(employee.getEmployeeId(), currentMonth, currentYear);
+                    .existsByEmployeeEmployeeIdAndPeriodMonthAndPeriodYear(employee.getEmployeeId(), currentMonth,
+                            currentYear);
 
             if (exists) {
                 // Skip to avoid duplicate entries
